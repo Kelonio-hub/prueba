@@ -1,0 +1,1661 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca Hipatia - IES CARPE DIEM</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/Kelonio-hub/prueba/main/logo%20biblioteca.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://raw.githubusercontent.com/Kelonio-hub/prueba/main/logo%20biblioteca.png">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        (function(){
+            emailjs.init("YOUR_USER_ID");
+        })();
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #loginSection {
+            text-align: center;
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #app {
+            display: none;
+        }
+        header {
+            text-align: center;
+            background-image: url('https://site.educa.madrid.org/ies.carpediem.fuenlabrada//wp-content/uploads/ies.carpediem.fuenlabrada/2024/03/carpediem-foto-inicio1920x1200c.jpg');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .admin-badge {
+            background-color: #007bff;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            margin-left: 10px;
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+        }
+        .admin-badge:hover {
+            background-color: #0056b3;
+        }
+        .notification-count {
+            background-color: #ff4444;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.7em;
+            padding: 2px 5px;
+            min-width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-weight: bold;
+        }
+        .email-section {
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            align-items: center;
+        }
+        .logout-btn, .web-ies-btn {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            color: white;
+        }
+        .logout-btn {
+            background-color: #dc3545;
+        }
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+        .web-ies-btn {
+            background-color: #28a745;
+        }
+        .web-ies-btn:hover {
+            background-color: #218838;
+        }
+        main {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        section {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .btn-reserva, .btn-recoger, .btn-devolver, .btn-anular {
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            border: none;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+        .btn-reserva {
+            background-color: #28a745;
+        }
+        .btn-reserva:hover {
+            background-color: #218838;
+        }
+        .btn-recoger {
+            background-color: #ffc107;
+            color: black;
+        }
+        .btn-recoger:hover {
+            background-color: #e0a800;
+        }
+        .btn-devolver {
+            background-color: #17a2b8;
+        }
+        .btn-devolver:hover {
+            background-color: #138496;
+        }
+        .btn-anular {
+            background-color: #dc3545;
+        }
+        .btn-anular:hover {
+            background-color: #c82333;
+        }
+        .libro {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        #perfil {
+            background: #f8f9fa;
+        }
+        .lista-libros {
+            margin: 10px 0;
+        }
+        .libro-perfil {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: white;
+        }
+        .fecha {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .retrasado {
+            color: red;
+            font-weight: bold;
+            background: #ffebee;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .estadisticas {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .estadisticas input {
+            width: 50px;
+            text-align: center;
+        }
+        #chatMensajes {
+            height: 200px;
+            overflow-y: scroll;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f9f9f9;
+        }
+        .mensaje {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .mensaje.user {
+            background-color: #e3f2fd;
+            text-align: right;
+        }
+        .mensaje.bot {
+            background-color: #f1f8e9;
+        }
+        .estado-reservado {
+            color: orange;
+            font-weight: bold;
+        }
+        .estado-no-disponible {
+            color: red;
+            font-weight: bold;
+        }
+        .tejuelo {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+        #conteoResultados {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #e9f5ff;
+            border-radius: 4px;
+        }
+        #adminHistorial table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        #adminHistorial th, #adminHistorial td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #adminHistorial th {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        #adminHistorial th:hover {
+            background-color: #0056b3;
+        }
+        #adminHistorial tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        #adminHistorial tr:hover {
+            background-color: #f1f1f1;
+        }
+        .sort-arrow::after {
+            content: '';
+            display: inline-block;
+            margin-left: 5px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+        .sort-arrow.asc::after {
+            border-bottom: 5px solid white;
+        }
+        .sort-arrow.desc::after {
+            border-top: 5px solid white;
+        }
+        #adminTabs {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+        }
+        .tab-btn.active {
+            background-color: #007bff;
+            color: white;
+            border-bottom: none;
+        }
+        .tab-btn.volver {
+            background-color: #f0f0f0;
+            color: black;
+        }
+        .tab-btn.volver:hover {
+            background-color: #e0e0e0;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        #adminApprovedEmails {
+            margin-top: 20px;
+        }
+        #approvedEmailList {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+            margin-top: 10px;
+        }
+        .email-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
+        }
+        .email-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .email-item button {
+            margin-left: auto;
+            padding: 2px 5px;
+            font-size: 0.8em;
+        }
+        #emailSearch {
+            width: 200px;
+        }
+        #splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ff25c8ff 0%, #1eff6d 50%, #f0ff22 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+            color: rgb(0, 0, 0);
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            overflow: hidden;
+        }
+        #splash.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .splash-container {
+            animation: fadeInContainer 1.5s ease-out;
+        }
+        #splash img {
+            max-width: 250px;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            animation: bounceIn 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.5s both;
+            transition: transform 0.3s ease;
+        }
+        #splash img:hover {
+            transform: scale(1.05);
+        }
+        #splash h2 {
+            font-size: 2.8em;
+            margin: 15px 0;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 0.8s ease-out 1s both;
+            letter-spacing: 1px;
+        }
+        #splash p {
+            font-size: 1.3em;
+            opacity: 0.95;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.8s ease-out 1.2s both;
+        }
+        @keyframes fadeInContainer {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 768px) {
+            #splash h2 { font-size: 2em; }
+            #splash p { font-size: 1.1em; }
+            #splash img { max-width: 180px; }
+            #adminHistorial table { font-size: 0.9em; }
+            #emailSearch { width: 100%; }
+            .email-item { flex-direction: column; align-items: flex-start; }
+            .email-item button { margin-left: 0; margin-top: 5px; }
+            #adminTabs { flex-direction: column; gap: 2px; }
+            .tab-btn { width: 100%; text-align: center; }
+            .email-section { flex-direction: column; align-items: flex-end; gap: 5px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #splash img, #splash h2, #splash p, .loader {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+        .pagination {
+            text-align: center;
+            margin: 10px 0;
+        }
+        .pagination button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .pagination button:disabled {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
+        .pagination span {
+            font-weight: bold;
+        }
+        #solicitudTextarea {
+            width: 100%;
+            height: 150px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div id="splash">
+        <div class="splash-container">
+            <img src="https://raw.githubusercontent.com/Kelonio-hub/prueba/main/logo%20biblioteca.png" 
+                 alt="Logo de la Biblioteca Hipatia" 
+                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvZ28gTm8gQ2FycmVnYWRvPC90ZXh0Pjwvc3ZnPg=='">
+            <h2>¡Bienvenidos a la Biblioteca Hipatia!</h2>
+            <p>Cargando el catálogo de libros y aventuras...</p>
+            <div class="loader"></div>
+        </div>
+    </div>
+    <div id="loginSection">
+        <h2>Acceso a la Biblioteca</h2>
+        <p>Solo usuarios @educa.madrid.org aprobados</p>
+        <input type="email" id="loginEmail" placeholder="Introduce tu email @educa.madrid.org">
+        <br>
+        <button onclick="login()">Acceder</button>
+        <p id="loginError" style="color: red; display: none;">Email inválido o no aprobado.</p>
+    </div>
+    <div id="app">
+        <header>
+            <h1>Catálogo de la Biblioteca Hipatia</h1>
+            <p>IES Carpe Diem, Fuenlabrada</p>
+            <div class="email-section">
+                <span id="adminBadge" class="admin-badge" style="display: none;" onclick="mostrarHistorialAdmin()">
+                    ADMIN
+                    <span id="notificationCount" class="notification-count" style="display: none;"></span>
+                </span>
+                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+                <button class="web-ies-btn" onclick="window.open('https://site.educa.madrid.org/ies.carpediem.fuenlabrada/', '_blank')">Web del IES</button>
+            </div>
+        </header>
+        <main>
+            <section id="perfil">
+                <h2>Mi Perfil</h2>
+                <div id="misReservas"></div>
+                <div id="misPrestamos"></div>
+                <div id="solicitudesLibros">
+                    <h3>Solicitudes de Libros</h3>
+                    <p>Indica qué libros te gustaría que se compraran para la biblioteca (máximo 500 palabras).</p>
+                    <textarea id="solicitudTextarea" maxlength="500"></textarea>
+                    <button onclick="enviarSolicitud()">Enviar Solicitud</button>
+                </div>
+            </section>
+            <section id="busqueda">
+                <h2>Buscar Libros</h2>
+                <input type="text" id="buscarInput" placeholder="Busca por título, autor, tejuelo, categoría" onkeypress="if(event.key === 'Enter') buscarLibros()">
+                <button onclick="buscarLibros()">Buscar</button>
+                <div id="conteoResultados" style="display: none;"></div>
+                <div id="resultados"></div>
+            </section>
+            <section id="chatbot">
+                <h2>Chatbot IA</h2>
+                <p>Pregunta sobre libros, recomendaciones...</p>
+                <div id="chatMensajes"></div>
+                <input type="text" id="chatInput" placeholder="Escribe tu mensaje...">
+                <button onclick="enviarMensaje()">Enviar</button>
+            </section>
+            <section id="adminHistorial" style="display: none;">
+                <h2>Administración</h2>
+                <div id="adminTabs">
+                    <button class="tab-btn active" onclick="showAdminTab('tareas')">Tareas Pendientes</button>
+                    <button class="tab-btn" onclick="showAdminTab('historial')">Historial Completo</button>
+                    <button class="tab-btn" onclick="showAdminTab('correos')">Gestión de Correos</button>
+                    <button class="tab-btn" onclick="showAdminTab('solicitudes')">Solicitudes de Libros</button>
+                    <button class="tab-btn volver" onclick="volverCatalogo()">Volver al Catálogo</button>
+                </div>
+                <div id="adminTabContent"></div>
+            </section>
+        </main>
+    </div>
+    <script type="text/javascript">
+        var gk_isXlsx = true;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error('Error al procesar archivo:', e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+    </script>
+    <script>
+        let catalogo = [];
+        let reservas = {};
+        let prestamos = {};
+        let solicitudes = [];
+        let approvedEmails = [];  // Se carga de Gist primero, luego local si falla
+        let emailSesion = null;
+        const EMAIL_ADMIN = 'rafael.casais@educa.madrid.org';
+        const ANNO_ACTUAL = '2025';
+        let sortColumn = 'fechaReserva';
+        let sortDirection = 'desc';
+        let sortColumnEmails = 'email';
+        let sortDirectionEmails = 'asc';
+        let currentPageHistorial = 1;
+        let currentPageEmails = 1;
+        let currentPageSolicitudes = 1;
+
+        // Config Gist (REEMPLAZA CON TU ID)
+        const GIST_ID = '8917de4cbfc9768f28377404bb4d4308';  // Ej: 'abc123def456'
+        const GIST_FILENAME = 'approved-emails.json';
+
+        // Token para admin (via prompt para seguridad)
+        function getAdminToken() {
+            if (emailSesion !== EMAIL_ADMIN) return null;
+            return prompt('Ingresa tu token GitHub para actualizar (solo admin):') || null;
+        }
+
+        // Carga de Gist (cortafuegos 1: global)
+        async function cargarApprovedEmailsFromGist() {
+            try {
+                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`);
+                if (!response.ok) throw new Error('Gist no encontrado o error API');
+                const gist = await response.json();
+                const content = gist.files[GIST_FILENAME]?.content;
+                if (!content) throw new Error('Archivo JSON no encontrado');
+                approvedEmails = JSON.parse(content);
+                console.log(`Emails cargados de Gist: ${approvedEmails.length} total`);
+                // Sobrescribe localStorage con Gist para consistencia
+                localStorage.setItem('approvedEmails', JSON.stringify(approvedEmails));
+            } catch (error) {
+                console.error('Error cargando Gist:', error);
+                // Fallback a localStorage
+                const local = localStorage.getItem('approvedEmails');
+                approvedEmails = local ? JSON.parse(local) : [];
+                alert('Error al cargar lista global. Usando lista local.');
+            }
+        }
+
+        // Guarda en Gist (cortafuegos 2: sync manual)
+        async function guardarApprovedEmailsToGist() {
+            const token = getAdminToken();
+            if (!token) return;
+            try {
+                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        files: {
+                            [GIST_FILENAME]: { content: JSON.stringify(approvedEmails, null, 2) }
+                        }
+                    })
+                });
+                if (!response.ok) throw new Error('Error al actualizar Gist');
+                console.log('Lista actualizada en Gist');
+                alert('¡Lista sincronizada globalmente!');
+            } catch (error) {
+                console.error('Error guardando Gist:', error);
+                alert('Falla al guardar. Verifica token e ID.');
+            }
+        }
+
+        async function cargarDatos() {
+            await cargarApprovedEmailsFromGist();  // Cortafuegos 1 primero
+            const reservasGuardadas = localStorage.getItem('reservasBiblioteca');
+            if (reservasGuardadas) reservas = JSON.parse(reservasGuardadas);
+            const prestamosGuardados = localStorage.getItem('prestamosBiblioteca');
+            if (prestamosGuardados) prestamos = JSON.parse(prestamosGuardados);
+            const solicitudesGuardadas = localStorage.getItem('solicitudesBiblioteca');
+            if (solicitudesGuardadas) solicitudes = JSON.parse(solicitudesGuardadas);
+            // approvedEmails ya cargado arriba
+        }
+
+        function guardarDatos() {
+            localStorage.setItem('reservasBiblioteca', JSON.stringify(reservas));
+            localStorage.setItem('prestamosBiblioteca', JSON.stringify(prestamos));
+            localStorage.setItem('solicitudesBiblioteca', JSON.stringify(solicitudes));
+            localStorage.setItem('approvedEmails', JSON.stringify(approvedEmails));  // Sync local con Gist
+        }
+
+        function getPendingTasksCount() {
+            let countReservas = 0;
+            Object.keys(reservas).forEach(email => {
+                countReservas += (reservas[email] || []).length;
+            });
+            let todosPrestamos = [];
+            Object.keys(prestamos).forEach(email => {
+                (prestamos[email] || []).forEach(p => todosPrestamos.push({email, ...p}));
+            });
+            let countRetrasados = todosPrestamos.filter(p => new Date() > new Date(p.fechaDevolucion) && !p.devuelto).length;
+            return countReservas + countRetrasados;
+        }
+
+        function updateNotificationBadge() {
+            if (emailSesion !== EMAIL_ADMIN) return;
+            const count = getPendingTasksCount();
+            const countElement = document.getElementById('notificationCount');
+            if (count > 0) {
+                countElement.textContent = count;
+                countElement.style.display = 'inline-flex';
+            } else {
+                countElement.style.display = 'none';
+            }
+        }
+
+        async function login() {  // Ahora async
+            const email = document.getElementById('loginEmail').value.trim();
+            if (!email || !email.endsWith('@educa.madrid.org')) {
+                document.getElementById('loginError').textContent = 'Email inválido. Debe terminar en @educa.madrid.org';
+                document.getElementById('loginError').style.display = 'block';
+                return;
+            }
+            await cargarApprovedEmailsFromGist();  // Carga global antes del check
+            if (email !== EMAIL_ADMIN && !approvedEmails.includes(email)) {
+                document.getElementById('loginError').textContent = 'Email no aprobado por el administrador.';
+                document.getElementById('loginError').style.display = 'block';
+                return;
+            }
+            emailSesion = email;
+            sessionStorage.setItem('emailSesion', email);
+            document.getElementById('adminBadge').style.display = email === EMAIL_ADMIN ? 'inline-block' : 'none';
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('perfil').style.display = email === EMAIL_ADMIN ? 'none' : 'block';
+            document.getElementById('busqueda').style.display = 'block';
+            document.getElementById('chatbot').style.display = 'block';
+            document.getElementById('adminHistorial').style.display = 'none';
+            if (email === EMAIL_ADMIN) {
+                updateNotificationBadge();
+            }
+            cargarPerfil();
+            cargarCatalogo();
+        }
+
+        function logout() {
+            emailSesion = null;
+            sessionStorage.removeItem('emailSesion');
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('adminBadge').style.display = 'none';
+            document.getElementById('adminHistorial').style.display = 'none';
+            document.getElementById('perfil').style.display = 'none';
+            document.getElementById('busqueda').style.display = 'none';
+            document.getElementById('chatbot').style.display = 'none';
+            document.getElementById('adminTabContent').innerHTML = '';
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => tab.classList.remove('active'));
+        }
+
+        function cargarPerfil() {
+            if (!emailSesion) return;
+            const esAdmin = emailSesion === EMAIL_ADMIN;
+            const misReservasDiv = document.getElementById('misReservas');
+            const misPrestamosDiv = document.getElementById('misPrestamos');
+
+            if (esAdmin) {
+                misReservasDiv.innerHTML = '';
+                misPrestamosDiv.innerHTML = '';
+                document.getElementById('solicitudesLibros').style.display = 'none';
+                return;
+            } else {
+                document.getElementById('solicitudesLibros').style.display = 'block';
+            }
+
+            const misReservas = reservas[emailSesion] || [];
+            misReservasDiv.innerHTML = `<h3>Mis Reservas (${misReservas.length}/3)</h3><div class="lista-libros">${misReservas.map(r => `
+                <div class="libro-perfil">
+                    <strong>${r.titulo}</strong> (ID: ${r.idRegistro})<br>
+                    <span class="fecha">Reservado el: ${new Date(r.fechaReserva).toLocaleDateString('es-ES')}</span>
+                    <button class="btn-anular" onclick="anularReserva('${emailSesion}', '${r.idRegistro}', '${r.titulo.replace(/'/g, "\\'")}')">Anular reserva</button>
+                </div>
+            `).join('') || '<p>No tienes reservas.</p>'}</div>`;
+
+            const misPrestamos = prestamos[emailSesion] || [];
+            let retrasados = misPrestamos.filter(p => new Date() > new Date(p.fechaDevolucion) && !p.devuelto);
+            misPrestamosDiv.innerHTML = `<h3>Mis Préstamos</h3><div class="lista-libros">${misPrestamos.map(p => {
+                const retrasado = new Date() > new Date(p.fechaDevolucion) && !p.devuelto;
+                return `
+                    <div class="libro-perfil">
+                        <strong>${p.titulo}</strong> (ID: ${p.idRegistro})<br>
+                        <span class="fecha">Prestado el: ${new Date(p.fechaPrestamo).toLocaleDateString('es-ES')}</span><br>
+                        <span class="fecha">Devolver antes de: ${new Date(p.fechaDevolucion).toLocaleDateString('es-ES')}</span>
+                        ${retrasado ? '<span class="retrasado">Retrasado</span>' : ''}
+                    </div>
+                `;
+            }).join('') || '<p>No tienes préstamos.</p>'}</div>`;
+
+            if (retrasados.length > 0) {
+                setTimeout(() => enviarRecordatorioRetraso(retrasados), 1000);
+            }
+        }
+
+        function enviarSolicitud() {
+            const texto = document.getElementById('solicitudTextarea').value.trim();
+            if (!texto) {
+                alert('Por favor, escribe tu solicitud antes de enviar.');
+                return;
+            }
+            if (texto.length > 500) {
+                alert('La solicitud no puede exceder 500 palabras.');
+                return;
+            }
+            const fecha = new Date().toISOString();
+            solicitudes.push({email: emailSesion, texto, fecha});
+            guardarDatos();
+            document.getElementById('solicitudTextarea').value = '';
+            alert('Solicitud enviada correctamente.');
+            updateNotificationBadge();
+        }
+
+        function mostrarHistorialAdmin() {
+            if (emailSesion !== EMAIL_ADMIN) return;
+            document.getElementById('perfil').style.display = 'none';
+            document.getElementById('busqueda').style.display = 'none';
+            document.getElementById('chatbot').style.display = 'none';
+            document.getElementById('adminHistorial').style.display = 'block';
+            showAdminTab('tareas');
+        }
+
+        function volverCatalogo() {
+            document.getElementById('adminHistorial').style.display = 'none';
+            document.getElementById('busqueda').style.display = 'block';
+            document.getElementById('chatbot').style.display = 'block';
+            if (emailSesion !== EMAIL_ADMIN) {
+                document.getElementById('perfil').style.display = 'block';
+            }
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            updateNotificationBadge();
+        }
+
+        function showAdminTab(tabId) {
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            const activeTab = Array.from(tabs).find(tab => tab.onclick.toString().includes(tabId));
+            if (activeTab) activeTab.classList.add('active');
+
+            const contentDiv = document.getElementById('adminTabContent');
+            if (tabId === 'tareas') {
+                contentDiv.innerHTML = getTareasPendientes();
+            } else if (tabId === 'historial') {
+                contentDiv.innerHTML = getHistorialCompleto();
+            } else if (tabId === 'correos') {
+                contentDiv.innerHTML = getGestionCorreos();
+                cargarApprovedEmails();
+            } else if (tabId === 'solicitudes') {
+                contentDiv.innerHTML = getSolicitudesLibros();
+            }
+        }
+
+        function getTareasPendientes() {
+            let tareas = '<h3>Tareas Pendientes</h3>';
+            let todasReservas = [];
+            Object.keys(reservas).forEach(email => {
+                (reservas[email] || []).forEach(r => todasReservas.push({email, ...r}));
+            });
+            let todosPrestamos = [];
+            Object.keys(prestamos).forEach(email => {
+                (prestamos[email] || []).forEach(p => todosPrestamos.push({email, ...p}));
+            });
+            let retrasados = todosPrestamos.filter(p => new Date() > new Date(p.fechaDevolucion) && !p.devuelto);
+
+            tareas += '<h4>Libros Reservados Pendientes de Recoger</h4>';
+            tareas += `<div class="lista-libros">${todasReservas.map(r => `
+                <div class="libro-perfil">
+                    <strong>${r.titulo}</strong> por ${r.email} (ID: ${r.idRegistro})<br>
+                    <span class="fecha">Reservado el: ${new Date(r.fechaReserva).toLocaleDateString('es-ES')}</span>
+                    <button class="btn-recoger" onclick="adminRecogerLibro('${r.email}', '${r.idRegistro}', '${r.titulo.replace(/'/g, "\\'")}')">Recoger</button>
+                    <button class="btn-anular" onclick="anularReserva('${r.email}', '${r.idRegistro}', '${r.titulo.replace(/'/g, "\\'")}')">Anular</button>
+                </div>
+            `).join('') || '<p>No hay reservas pendientes.</p>'}</div>`;
+
+            tareas += '<h4>Libros Retrasados</h4>';
+            tareas += `<div class="lista-libros">${retrasados.map(p => `
+                <div class="libro-perfil">
+                    <strong>${p.titulo}</strong> por ${p.email} (ID: ${p.idRegistro})<br>
+                    <span class="fecha">Prestado el: ${new Date(p.fechaPrestamo).toLocaleDateString('es-ES')}</span><br>
+                    <span class="fecha">Debería devolverse antes de: ${new Date(p.fechaDevolucion).toLocaleDateString('es-ES')}</span>
+                    <span class="retrasado">Retrasado</span>
+                    <button class="btn-devolver" onclick="adminDevolverLibro('${p.email}', '${p.idRegistro}', '${p.titulo.replace(/'/g, "\\'")}')">Marcar Devuelto</button>
+                </div>
+            `).join('') || '<p>No hay libros retrasados.</p>'}</div>`;
+
+            return tareas;
+        }
+
+        function getHistorialCompleto() {
+            let historialHtml = '<h3>Historial Completo</h3>';
+            let historial = [];
+
+            Object.keys(reservas).forEach(email => {
+                (reservas[email] || []).forEach(r => {
+                    historial.push({
+                        email,
+                        titulo: r.titulo,
+                        idRegistro: r.idRegistro,
+                        fechaReserva: r.fechaReserva || '',
+                        fechaPrestamo: '',
+                        fechaDevolucion: '',
+                        estado: 'Reservado'
+                    });
+                });
+            });
+            Object.keys(prestamos).forEach(email => {
+                (prestamos[email] || []).forEach(p => {
+                    historial.push({
+                        email,
+                        titulo: p.titulo,
+                        idRegistro: p.idRegistro,
+                        fechaReserva: p.fechaReserva || '',
+                        fechaPrestamo: p.fechaPrestamo || '',
+                        fechaDevolucion: p.fechaDevolucion || '',
+                        estado: p.devuelto ? 'Devuelto' : 'Prestado'
+                    });
+                });
+            });
+
+            historial.sort((a, b) => {
+                let valueA, valueB;
+                switch (sortColumn) {
+                    case 'titulo':
+                        valueA = a.titulo.toLowerCase();
+                        valueB = b.titulo.toLowerCase();
+                        break;
+                    case 'email':
+                        valueA = a.email.toLowerCase();
+                        valueB = b.email.toLowerCase();
+                        break;
+                    case 'fechaReserva':
+                        valueA = a.fechaReserva || '9999-12-31';
+                        valueB = b.fechaReserva || '9999-12-31';
+                        break;
+                    case 'fechaPrestamo':
+                        valueA = a.fechaPrestamo || '9999-12-31';
+                        valueB = b.fechaPrestamo || '9999-12-31';
+                        break;
+                    case 'fechaDevolucion':
+                        valueA = a.fechaDevolucion || '9999-12-31';
+                        valueB = b.fechaDevolucion || '9999-12-31';
+                        break;
+                    case 'estado':
+                        valueA = a.estado.toLowerCase();
+                        valueB = b.estado.toLowerCase();
+                        break;
+                    default:
+                        valueA = a.idRegistro.toLowerCase();
+                        valueB = b.idRegistro.toLowerCase();
+                }
+                if (valueA < valueB) return sortDirection === 'asc' ? -1 : 1;
+                if (valueA > valueB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            const pageSize = 25;
+            const totalPages = Math.ceil(historial.length / pageSize) || 1;
+            const start = (currentPageHistorial - 1) * pageSize;
+            const end = start + pageSize;
+            const paginatedHistorial = historial.slice(start, end);
+
+            const paginationHtml = `
+                <div class="pagination">
+                    <button ${currentPageHistorial === 1 ? 'disabled' : ''} onclick="changePageHistorial(${currentPageHistorial - 1})">&lt;</button>
+                    <span>Página ${currentPageHistorial}/${totalPages}</span>
+                    <button ${currentPageHistorial === totalPages ? 'disabled' : ''} onclick="changePageHistorial(${currentPageHistorial + 1})">&gt;</button>
+                </div>
+            `;
+
+            historialHtml += paginationHtml;
+
+            historialHtml += `<table>
+                <thead>
+                    <tr>
+                        <th onclick="ordenarHistorial('email')" class="sort-arrow ${sortColumn === 'email' ? sortDirection : ''}">Usuario</th>
+                        <th onclick="ordenarHistorial('titulo')" class="sort-arrow ${sortColumn === 'titulo' ? sortDirection : ''}">Título</th>
+                        <th onclick="ordenarHistorial('idRegistro')" class="sort-arrow ${sortColumn === 'idRegistro' ? sortDirection : ''}">ID Registro</th>
+                        <th onclick="ordenarHistorial('fechaReserva')" class="sort-arrow ${sortColumn === 'fechaReserva' ? sortDirection : ''}">Fecha Reserva</th>
+                        <th onclick="ordenarHistorial('fechaPrestamo')" class="sort-arrow ${sortColumn === 'fechaPrestamo' ? sortDirection : ''}">Fecha Préstamo</th>
+                        <th onclick="ordenarHistorial('fechaDevolucion')" class="sort-arrow ${sortColumn === 'fechaDevolucion' ? sortDirection : ''}">Fecha Devolución</th>
+                        <th onclick="ordenarHistorial('estado')" class="sort-arrow ${sortColumn === 'estado' ? sortDirection : ''}">Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${paginatedHistorial.length > 0 ? paginatedHistorial.map(item => {
+                        const retrasado = item.estado === 'Prestado' && item.fechaDevolucion && new Date() > new Date(item.fechaDevolucion);
+                        return `
+                            <tr>
+                                <td>${item.email}</td>
+                                <td>${item.titulo}</td>
+                                <td>${item.idRegistro}</td>
+                                <td>${item.fechaReserva ? new Date(item.fechaReserva).toLocaleDateString('es-ES') : '-'}</td>
+                                <td>${item.fechaPrestamo ? new Date(item.fechaPrestamo).toLocaleDateString('es-ES') : '-'}</td>
+                                <td>${item.fechaDevolucion ? new Date(item.fechaDevolucion).toLocaleDateString('es-ES') : '-'}</td>
+                                <td>${retrasado ? '<span class="retrasado">Retrasado</span>' : item.estado}</td>
+                                <td>
+                                    ${item.estado === 'Reservado' ? `
+                                        <button class="btn-recoger" onclick="adminRecogerLibro('${item.email}', '${item.idRegistro}', '${item.titulo.replace(/'/g, "\\'")}')">Prestado</button>
+                                        <button class="btn-anular" onclick="anularReserva('${item.email}', '${item.idRegistro}', '${item.titulo.replace(/'/g, "\\'")}')">Anular</button>
+                                    ` : ''}
+                                    ${item.estado === 'Prestado' ? `
+                                        <button class="btn-devolver" onclick="adminDevolverLibro('${item.email}', '${item.idRegistro}', '${item.titulo.replace(/'/g, "\\'")}')">Devolver</button>
+                                    ` : ''}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('') : '<tr><td colspan="8">No hay registros.</td></tr>'}
+                </tbody>
+            </table>`;
+
+            historialHtml += paginationHtml;
+
+            const prestamosPorAnno = {};
+            historial.forEach(item => {
+                if (item.fechaPrestamo) {
+                    const date = new Date(item.fechaPrestamo);
+                    const anno = date.getFullYear();
+                    prestamosPorAnno[anno] = (prestamosPorAnno[anno] || 0) + 1;
+                }
+            });
+            const sortedAnnos = Object.entries(prestamosPorAnno).sort((a, b) => b[1] - a[1]);
+            historialHtml += '<h4>Estadísticas de Préstamos por Año</h4><ul>';
+            sortedAnnos.forEach(([anno, count]) => {
+                historialHtml += `<li>${anno}: ${count} préstamos</li>`;
+            });
+            historialHtml += '</ul>';
+
+            const prestamosPorMes = {};
+            historial.forEach(item => {
+                if (item.fechaPrestamo) {
+                    const date = new Date(item.fechaPrestamo);
+                    const mes = date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+                    prestamosPorMes[mes] = (prestamosPorMes[mes] || 0) + 1;
+                }
+            });
+            const sortedMeses = Object.entries(prestamosPorMes).sort((a, b) => b[1] - a[1]);
+            historialHtml += '<h4>Estadísticas de Préstamos por Mes</h4><ul>';
+            sortedMeses.forEach(([mes, count]) => {
+                historialHtml += `<li>${mes}: ${count} préstamos</li>`;
+            });
+            historialHtml += '</ul>';
+
+            historialHtml += getLibrosMasPrestados(historial);
+            return historialHtml;
+        }
+
+        function getLibrosMasPrestados(historial) {
+            const conteo = {};
+            historial.forEach(item => {
+                if (item.fechaPrestamo) {
+                    conteo[item.titulo] = (conteo[item.titulo] || 0) + 1;
+                }
+            });
+            const sorted = Object.entries(conteo).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            let html = '<h4>Libros Más Prestados</h4><ul>';
+            sorted.forEach(([titulo, count]) => {
+                html += `<li>${titulo}: ${count} veces</li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        function changePageHistorial(newPage) {
+            currentPageHistorial = newPage;
+            showAdminTab('historial');
+        }
+
+        function getGestionCorreos() {
+            return `
+                <h3>Gestión de Correos Aprobados</h3>
+                <input type="email" id="newEmail" placeholder="Agregar correo manualmente">
+                <button onclick="addEmail()">Agregar</button>
+                <input type="file" id="emailFile" accept=".csv,.xlsx">
+                <button onclick="importEmails()">Importar desde archivo</button>
+                <!-- NUEVOS BOTONES PARA SYNC CON GIST (cortafuegos 2) -->
+                <button onclick="cargarApprovedEmailsFromGist(); setTimeout(cargarApprovedEmails, 500);">🔄 Cargar Lista Global (de Gist)</button>
+                <button onclick="guardarApprovedEmailsToGist();">💾 Actualizar Global (a Gist)</button>
+                <!-- FIN NUEVOS -->
+                <input type="text" id="emailSearch" placeholder="Buscar correo" oninput="filterEmails()">
+                <button onclick="selectAllEmails()">Seleccionar todos</button>
+                <button onclick="deselectAllEmails()">Deseleccionar todos</button>
+                <button onclick="deleteSelectedEmails()">Eliminar Correos seleccionados</button>
+                <div id="approvedEmailPaginationTop" class="pagination"></div>
+                <table id="approvedEmailTable">
+                    <thead>
+                        <tr>
+                            <th onclick="ordenarCorreos('email')" class="sort-arrow ${sortColumnEmails === 'email' ? sortDirectionEmails : ''}">Correo</th>
+                            <th onclick="ordenarCorreos('prestados')" class="sort-arrow ${sortColumnEmails === 'prestados' ? sortDirectionEmails : ''}">Libros Prestados</th>
+                            <th onclick="ordenarCorreos('reservas')" class="sort-arrow ${sortColumnEmails === 'reservas' ? sortDirectionEmails : ''}">En Reserva</th>
+                            <th onclick="ordenarCorreos('porDevolver')" class="sort-arrow ${sortColumnEmails === 'porDevolver' ? sortDirectionEmails : ''}">Por Devolver</th>
+                            <th onclick="ordenarCorreos('retrasados')" class="sort-arrow ${sortColumnEmails === 'retrasados' ? sortDirectionEmails : ''}">Retrasados</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="approvedEmailList"></tbody>
+                </table>
+                <div id="approvedEmailPaginationBottom" class="pagination"></div>
+            `;
+        }
+
+        function getSolicitudesLibros() {
+            let solicitudesHtml = '<h3>Solicitudes de Libros</h3>';
+
+            const pageSize = 25;
+            const totalPages = Math.ceil(solicitudes.length / pageSize) || 1;
+            const start = (currentPageSolicitudes - 1) * pageSize;
+            const end = start + pageSize;
+            const paginatedSolicitudes = solicitudes.slice(start, end);
+
+            const paginationHtml = `
+                <div class="pagination">
+                    <button ${currentPageSolicitudes === 1 ? 'disabled' : ''} onclick="changePageSolicitudes(${currentPageSolicitudes - 1})">&lt;</button>
+                    <span>Página ${currentPageSolicitudes}/${totalPages}</span>
+                    <button ${currentPageSolicitudes === totalPages ? 'disabled' : ''} onclick="changePageSolicitudes(${currentPageSolicitudes + 1})">&gt;</button>
+                </div>
+            `;
+
+            solicitudesHtml += paginationHtml;
+
+            solicitudesHtml += `<table>
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Fecha</th>
+                        <th>Solicitud</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${paginatedSolicitudes.map((s, index) => `
+                        <tr>
+                            <td>${s.email}</td>
+                            <td>${new Date(s.fecha).toLocaleDateString('es-ES')}</td>
+                            <td>${s.texto}</td>
+                            <td><button class="btn-anular" onclick="eliminarSolicitud(${start + index})">Eliminar</button></td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="4">No hay solicitudes.</td></tr>'}
+                </tbody>
+            </table>`;
+
+            solicitudesHtml += paginationHtml;
+
+            return solicitudesHtml;
+        }
+
+        function eliminarSolicitud(index) {
+            if (confirm('¿Estás seguro de eliminar esta solicitud?')) {
+                solicitudes.splice(index, 1);
+                guardarDatos();
+                showAdminTab('solicitudes');
+                updateNotificationBadge();
+            }
+        }
+
+        function changePageSolicitudes(newPage) {
+            currentPageSolicitudes = newPage;
+            showAdminTab('solicitudes');
+        }
+
+        function changePageEmails(newPage) {
+            currentPageEmails = newPage;
+            showAdminTab('correos');
+        }
+
+        function enviarRecordatorioRetraso(retrasados) {
+            const mensajes = retrasados.map(p => `El libro "${p.titulo}" está retrasado. Por favor, devuélvelo cuanto antes.`).join('\n');
+            const params = {
+                to_email: emailSesion,
+                subject: 'Recordatorio: Libros retrasados en devolución',
+                message: `Hola,\n\n${mensajes}\n\nGracias por tu colaboración.\n\nBiblioteca Carpe Diem`
+            };
+            emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', params)
+                .then(() => {
+                    console.log('Recordatorio de retraso enviado al estudiante.');
+                }, (error) => {
+                    console.error('Error al enviar recordatorio:', error);
+                    alert('Error al enviar correo con EmailJS. Abriendo cliente de correo como alternativa.');
+                    const subject = encodeURIComponent('Recordatorio: Libros retrasados en devolución');
+                    const body = encodeURIComponent(`Hola,\n\n${mensajes}\n\nGracias por tu colaboración.\n\nBiblioteca Carpe Diem`);
+                    window.location.href = `mailto:${emailSesion}?subject=${subject}&body=${body}`;
+                });
+        }
+
+        function adminRecogerLibro(emailEstudiante, idRegistro, titulo) {
+            const reservaIndex = (reservas[emailEstudiante] || []).findIndex(r => r.idRegistro === idRegistro);
+            if (reservaIndex === -1) return;
+
+            const reserva = reservas[emailEstudiante][reservaIndex];
+            const fechaPrestamo = new Date().toISOString();
+            const fechaDevolucion = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+            if (!prestamos[emailEstudiante]) prestamos[emailEstudiante] = [];
+            prestamos[emailEstudiante].push({idRegistro, fechaReserva: reserva.fechaReserva, fechaPrestamo, fechaDevolucion, titulo, devuelto: false});
+
+            reservas[emailEstudiante].splice(reservaIndex, 1);
+            guardarDatos();
+
+            const libro = catalogo.find(l => l.idRegistro === idRegistro);
+            if (libro) libro.disponible = false;
+
+            alert(`Libro recogido para ${emailEstudiante}.`);
+            updateNotificationBadge();
+            showAdminTab('tareas');
+            const inputValue = document.getElementById('buscarInput').value;
+            if (inputValue) buscarLibros();
+        }
+
+        function adminDevolverLibro(emailEstudiante, idRegistro, titulo) {
+            const prestamoIndex = (prestamos[emailEstudiante] || []).findIndex(p => p.idRegistro === idRegistro);
+            if (prestamoIndex === -1) return;
+
+            prestamos[emailEstudiante][prestamoIndex].devuelto = true;
+            guardarDatos();
+
+            const libro = catalogo.find(l => l.idRegistro === idRegistro);
+            if (libro) libro.disponible = true;
+
+            alert(`Libro marcado como devuelto para ${emailEstudiante}.`);
+            updateNotificationBadge();
+            showAdminTab('tareas');
+            const inputValue = document.getElementById('buscarInput').value;
+            if (inputValue) buscarLibros();
+        }
+
+        function anularReserva(emailEstudiante, idRegistro, titulo) {
+            const reservaIndex = (reservas[emailEstudiante] || []).findIndex(r => r.idRegistro === idRegistro);
+            if (reservaIndex === -1) return;
+
+            reservas[emailEstudiante].splice(reservaIndex, 1);
+            guardarDatos();
+
+            const libro = catalogo.find(l => l.idRegistro === idRegistro);
+            if (libro) libro.disponible = true;
+
+            alert(`Reserva anulada para ${titulo}.`);
+            updateNotificationBadge();
+
+            if (emailSesion === EMAIL_ADMIN) {
+                showAdminTab('tareas');
+            } else {
+                cargarPerfil();
+            }
+            const inputValue = document.getElementById('buscarInput').value;
+            if (inputValue) buscarLibros();
+        }
+
+        function cargarApprovedEmails() {
+            let emailsData = approvedEmails.map(email => {
+                const totalPrestados = (prestamos[email] || []).length;
+                const reservasCount = (reservas[email] || []).length;
+                const porDevolver = (prestamos[email] || []).filter(p => !p.devuelto).length;
+                const retrasados = (prestamos[email] || []).filter(p => !p.devuelto && new Date() > new Date(p.fechaDevolucion)).length;
+                return {email, prestados: totalPrestados, reservas: reservasCount, porDevolver, retrasados};
+            });
+
+            const search = document.getElementById('emailSearch').value.toLowerCase().trim();
+            if (search) {
+                emailsData = emailsData.filter(data => data.email.toLowerCase().includes(search));
+            }
+
+            emailsData.sort((a, b) => {
+                let valueA = a[sortColumnEmails];
+                let valueB = b[sortColumnEmails];
+                if (typeof valueA === 'string') valueA = valueA.toLowerCase();
+                if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+                if (valueA < valueB) return sortDirectionEmails === 'asc' ? -1 : 1;
+                if (valueA > valueB) return sortDirectionEmails === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            const pageSize = 25;
+            const totalPages = Math.ceil(emailsData.length / pageSize) || 1;
+            const start = (currentPageEmails - 1) * pageSize;
+            const end = start + pageSize;
+            const paginatedEmails = emailsData.slice(start, end);
+
+            const paginationHtml = `
+                <button ${currentPageEmails === 1 ? 'disabled' : ''} onclick="changePageEmails(${currentPageEmails - 1})">&lt;</button>
+                <span>Página ${currentPageEmails}/${totalPages}</span>
+                <button ${currentPageEmails === totalPages ? 'disabled' : ''} onclick="changePageEmails(${currentPageEmails + 1})">&gt;</button>
+            `;
+
+            document.getElementById('approvedEmailPaginationTop').innerHTML = paginationHtml;
+            document.getElementById('approvedEmailPaginationBottom').innerHTML = paginationHtml;
+
+            const listTbody = document.getElementById('approvedEmailList');
+            listTbody.innerHTML = paginatedEmails.length > 0 ? paginatedEmails.map(data => `
+                <tr>
+                    <td><input type="checkbox" value="${data.email}"> ${data.email}</td>
+                    <td>${data.prestados}</td>
+                    <td>${data.reservas}</td>
+                    <td>${data.porDevolver}</td>
+                    <td>${data.retrasados}</td>
+                    <td><button onclick="deleteEmail('${data.email}')">Eliminar</button></td>
+                </tr>
+            `).join('') : '<tr><td colspan="6">No hay correos aprobados.</td></tr>';
+
+            document.querySelectorAll('#approvedEmailTable th').forEach(th => {
+                th.classList.remove('asc', 'desc');
+                if (th.getAttribute('onclick').includes(sortColumnEmails)) {
+                    th.classList.add(sortDirectionEmails);
+                }
+            });
+        }
+
+        function addEmail() {
+            const newEmail = document.getElementById('newEmail').value.trim();
+            if (newEmail && newEmail.endsWith('@educa.madrid.org') && !approvedEmails.includes(newEmail)) {
+                approvedEmails.push(newEmail);
+                guardarDatos();
+                cargarApprovedEmails();
+                document.getElementById('newEmail').value = '';
+                // Opcional: auto-sync al Gist (descomenta si quieres)
+                // guardarApprovedEmailsToGist();
+            } else {
+                alert('Email inválido, ya agregado o no termina en @educa.madrid.org.');
+            }
+        }
+
+        function importEmails() {
+            const fileInput = document.getElementById('emailFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Por favor, selecciona un archivo.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const extension = file.name.split('.').pop().toLowerCase();
+                let emails = [];
+                if (extension === 'csv') {
+                    const data = e.target.result;
+                    emails = data.split('\n').map(line => line.trim()).filter(line => line && line.endsWith('@educa.madrid.org'));
+                } else if (extension === 'xlsx') {
+                    gk_fileData[file.name] = e.target.result.split(',')[1];
+                    gk_xlsxFileLookup[file.name] = true;
+                    const csv = loadFileData(file.name);
+                    emails = csv.split('\n').slice(1).map(line => line.split(',')[0].trim()).filter(line => line && line.endsWith('@educa.madrid.org'));
+                }
+                const nuevos = emails.filter(email => !approvedEmails.includes(email));
+                if (nuevos.length === 0) {
+                    alert('No se encontraron correos válidos o nuevos para agregar.');
+                    return;
+                }
+                approvedEmails.push(...nuevos);
+                guardarDatos();
+                cargarApprovedEmails();
+                fileInput.value = '';
+                alert(`${nuevos.length} correos agregados correctamente.`);
+                // Opcional: auto-sync al Gist
+                // guardarApprovedEmailsToGist();
+            };
+            reader.onerror = function() {
+                alert('Error al leer el archivo.');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function deleteEmail(email) {
+            if (confirm('¿Está seguro que desea eliminar el correo seleccionado?')) {
+                approvedEmails = approvedEmails.filter(e => e !== email);
+                guardarDatos();
+                cargarApprovedEmails();
+                // Opcional: auto-sync
+                // guardarApprovedEmailsToGist();
+            }
+        }
+
+        function deleteSelectedEmails() {
+            const checkboxes = document.querySelectorAll('#approvedEmailList input[type="checkbox"]:checked');
+            if (checkboxes.length === 0) {
+                alert('No hay correos seleccionados.');
+                return;
+            }
+            if (confirm(`¿Está seguro que desea eliminar TODOS los correos seleccionados? (${checkboxes.length} correos)`)) {
+                checkboxes.forEach(checkbox => {
+                    const email = checkbox.value;
+                    approvedEmails = approvedEmails.filter(e => e !== email);
+                });
+                guardarDatos();
+                cargarApprovedEmails();
+                // Opcional: auto-sync
+                // guardarApprovedEmailsToGist();
+            }
+        }
+
+        function selectAllEmails() {
+            const checkboxes = document.querySelectorAll('#approvedEmailList input[type="checkbox"]');
+            checkboxes.forEach(checkbox => checkbox.checked = true);
+        }
+
+        function deselectAllEmails() {
+            const checkboxes = document.querySelectorAll('#approvedEmailList input[type="checkbox"]');
+            checkboxes.forEach(checkbox => checkbox.checked = false);
+        }
+
+        function filterEmails() {
+            currentPageEmails = 1;
+            cargarApprovedEmails();
+        }
+
+        function ordenarCorreos(column) {
+            if (sortColumnEmails === column) {
+                sortDirectionEmails = sortDirectionEmails === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumnEmails = column;
+                sortDirectionEmails = 'asc';
+            }
+            currentPageEmails = 1;
+            cargarApprovedEmails();
+        }
+
+        function ordenarHistorial(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            currentPageHistorial = 1;
+            showAdminTab('historial');
+        }
+
+        function reservarLibro(idRegistro, titulo) {
+            if (!emailSesion || emailSesion === EMAIL_ADMIN) return;
+            cargarDatos();
+            if (!reservas[emailSesion]) reservas[emailSesion] = [];
+            if (!prestamos[emailSesion]) prestamos[emailSesion] = [];
+
+            const tieneRetrasados = prestamos[emailSesion].some(p => new Date() > new Date(p.fechaDevolucion) && !p.devuelto);
+            if (tieneRetrasados) {
+                alert('No puedes reservar más libros hasta que devuelvas los libros retrasados.');
+                return;
+            }
+
+            if (reservas[emailSesion].length >= 3) {
+                alert('Solo puedes reservar un máximo de 3 libros.');
+                return;
+            }
+            const libro = catalogo.find(l => l.idRegistro === idRegistro);
+            if (!libro || !libro.disponible) return;
+            const fechaReserva = new Date().toISOString();
+            reservas[emailSesion].push({idRegistro, fechaReserva, titulo});
+            libro.disponible = false;
+            guardarDatos();
+
+            alert(`Reservado! Te quedan ${3 - reservas[emailSesion].length} reservas.`);
+            updateNotificationBadge();
+            cargarPerfil();
+            const inputValue = document.getElementById('buscarInput').value;
+            if (inputValue) buscarLibros();
+        }
+
+        async function cargarCatalogo() {
+            try {
+                const response = await fetch('Ejemplares.xml');
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                
+                if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+                    throw new Error('Error al parsear XML.');
+                }
+
+                const libros = {};
+                Array.from(xmlDoc.getElementsByTagName('Libro')).forEach(libro => {
+                    const idDocumento = libro.getAttribute('id_documento');
+                    libros[idDocumento] = {
+                        titulo: libro.getElementsByTagName('Titulo')[0]?.textContent || 'Sin título',
+                        autor: libro.getElementsByTagName('Autor')[0]?.textContent || 'Desconocido',
+                        categoria: libro.getElementsByTagName('Descriptor')[0]?.textContent || 'No disponible',
+                        fechaEdicion: libro.getElementsByTagName('FechaEdicion')[0]?.textContent || 'No disponible'
+                    };
+                });
+
+                catalogo = Array.from(xmlDoc.getElementsByTagName('Ejemplar')).map(ejemplar => {
+                    const idRegistro = ejemplar.getAttribute('IdRegistro') || '';
+                    const libro = libros[idRegistro] || {};
+                    return {
+                        titulo: libro.titulo || 'Sin título',
+                        autor: libro.autor || 'Desconocido',
+                        categoria: libro.categoria || 'No disponible',
+                        fechaEdicion: libro.fechaEdicion || 'No disponible',
+                        signatura: `${ejemplar.getAttribute('Signatura1') || ''} ${ejemplar.getAttribute('Signatura2') || ''} ${ejemplar.getAttribute('Signatura3') || ''}`.trim(),
+                        isbn: ejemplar.getAttribute('ISBN') || 'No disponible',
+                        fecha: ejemplar.getAttribute('Fecha') || 'No disponible',
+                        disponible: ejemplar.getAttribute('Estado') === '0',
+                        idRegistro: idRegistro
+                    };
+                });
+
+                Object.values(reservas).flat().forEach(r => {
+                    const libro = catalogo.find(l => l.idRegistro === r.idRegistro);
+                    if (libro) libro.disponible = false;
+                });
+                Object.values(prestamos).flat().filter(p => !p.devuelto).forEach(p => {
+                    const libro = catalogo.find(l => l.idRegistro === p.idRegistro);
+                    if (libro) libro.disponible = false;
+                });
+
+                if (!catalogo.length) document.getElementById('resultados').innerHTML = '<p>No se encontraron libros.</p>';
+            } catch (error) {
+                console.error('Error al cargar:', error);
+                document.getElementById('resultados').innerHTML = '<p>Catálogo en mantenimiento.</p>';
+                catalogo = [];
+            }
+        }
+
+        function buscarLibros() {
+            if (!emailSesion) return;
+            if (!catalogo.length) {
+                document.getElementById('resultados').innerHTML = '<p>Catálogo en mantenimiento.</p>';
+                return;
+            }
+            const query = document.getElementById('buscarInput').value.toLowerCase().trim();
+            const resultados = catalogo.filter(libro => 
+                libro.titulo.toLowerCase().includes(query) ||
+                libro.autor.toLowerCase().includes(query) ||
+                libro.categoria.toLowerCase().includes(query) ||
+                libro.signatura.toLowerCase().includes(query) ||
+                libro.isbn.toLowerCase().includes(query)
+            );
+            mostrarResultados(resultados, query);
+        }
+
+        function mostrarResultados(libros, query) {
+            const div = document.getElementById('resultados');
+            const conteoDiv = document.getElementById('conteoResultados');
+            const esAdmin = emailSesion === EMAIL_ADMIN;
+            
+            if (libros.length === 0) {
+                div.innerHTML = '<p>No se encontraron libros.</p>';
+                conteoDiv.style.display = 'none';
+                return;
+            }
+
+            const textoConteo = query ? `${libros.length} resultados para "${query}"` : `${libros.length} libros en el catálogo`;
+            conteoDiv.innerHTML = `<p>${textoConteo}</p>`;
+            conteoDiv.style.display = 'block';
+
+            div.innerHTML = libros.map(libro => {
+                const tejuelo = libro.signatura.replace(/\s+/g, '-');
+                let estadoHtml = '';
+                if (libro.disponible) {
+                    if (!esAdmin) {
+                        estadoHtml = `<button class="btn-reserva" onclick="reservarLibro('${libro.idRegistro}', '${libro.titulo.replace(/'/g, "\\'")}')">Reservar</button>`;
+                    } else {
+                        estadoHtml = 'Sí';
+                    }
+                } else {
+                    let esReserva = false;
+                    let emailReserva = null;
+                    let emailPrestamo = null;
+                    Object.keys(reservas).some(email => {
+                        const r = reservas[email].find(rr => rr.idRegistro === libro.idRegistro);
+                        if (r) {
+                            esReserva = true;
+                            emailReserva = email;
+                            return true;
+                        }
+                    });
+                    if (!esReserva) {
+                        Object.keys(prestamos).some(email => {
+                            const p = prestamos[email].find(pp => pp.idRegistro === libro.idRegistro && !pp.devuelto);
+                            if (p) {
+                                emailPrestamo = email;
+                                return true;
+                            }
+                        });
+                    }
+                    if (esAdmin) {
+                        if (esReserva) {
+                            estadoHtml = `<span class="estado-reservado">Reservado por ${emailReserva}</span> <button class="btn-recoger" onclick="adminRecogerLibro('${emailReserva}', '${libro.idRegistro}', '${libro.titulo.replace(/'/g, "\\'")}')">Recoger</button> <button class="btn-anular" onclick="anularReserva('${emailReserva}', '${libro.idRegistro}', '${libro.titulo.replace(/'/g, "\\'")}')">Anular</button>`;
+                        } else if (emailPrestamo) {
+                            estadoHtml = `<span class="estado-no-disponible">Prestado a ${emailPrestamo}</span> <button class="btn-devolver" onclick="adminDevolverLibro('${emailPrestamo}', '${libro.idRegistro}', '${libro.titulo.replace(/'/g, "\\'")}')">Devolver</button>`;
+                        } else {
+                            estadoHtml = '<span class="estado-no-disponible">No disponible</span>';
+                        }
+                    } else {
+                        estadoHtml = `<span class="estado-reservado">No disponible</span>`;
+                    }
+                }
+                return `
+                    <div class="libro">
+                        <p><strong>Título:</strong> ${libro.titulo}</p>
+                        <p><strong>Autor:</strong> ${libro.autor}</p>
+                        <p><strong>Categoría:</strong> ${libro.categoria}</p>
+                        <p><strong>Tejuelo:</strong> <span class="tejuelo">${tejuelo}</span></p>
+                        <p><strong>Disponible:</strong> ${estadoHtml}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function enviarMensaje() {
+            if (!emailSesion) return;
+            const input = document.getElementById('chatInput');
+            const mensaje = input.value.trim();
+            if (!mensaje) return;
+            agregarMensaje(mensaje, 'user');
+            input.value = '';
+            let respuesta = '';
+            const esAdmin = emailSesion === EMAIL_ADMIN;
+            const mensajeLower = mensaje.toLowerCase();
+            if (mensajeLower.includes('perfil') || mensajeLower.includes('mis libros')) {
+                respuesta = esAdmin ? 'Como administrador, usa el botón ADMIN para ver el historial de reservas y préstamos.' : 'Ve a "Mi Perfil" para ver tus reservas y préstamos.';
+            } else if (mensajeLower.includes('reservar')) {
+                respuesta = 'Busca un libro disponible y haz clic en "Reservar". El administrador confirmará la recogida.';
+            } else {
+                respuesta = `Hola ${esAdmin ? '(Administrador)' : ''}, ¿en qué te ayudo? Prueba con "perfil" o "reservar".`;
+            }
+            setTimeout(() => agregarMensaje(respuesta, 'bot'), 1000);
+        }
+
+        function agregarMensaje(texto, tipo) {
+            const div = document.getElementById('chatMensajes');
+            const p = document.createElement('p');
+            p.className = `mensaje ${tipo}`;
+            p.textContent = texto;
+            div.appendChild(p);
+            div.scrollTop = div.scrollHeight;
+        }
+
+        // Init app
+        async function initApp() {
+            await cargarDatos();  // Ahora async
+            const emailSesionGuardada = sessionStorage.getItem('emailSesion');
+            if (emailSesionGuardada) {
+                emailSesion = emailSesionGuardada;
+                document.getElementById('adminBadge').style.display = emailSesion === EMAIL_ADMIN ? 'inline-block' : 'none';
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('perfil').style.display = emailSesion === EMAIL_ADMIN ? 'none' : 'block';
+                document.getElementById('busqueda').style.display = 'block';
+                document.getElementById('chatbot').style.display = 'block';
+                document.getElementById('adminHistorial').style.display = 'none';
+                if (emailSesion === EMAIL_ADMIN) {
+                    updateNotificationBadge();
+                }
+                cargarPerfil();
+                cargarCatalogo();
+            }
+            setTimeout(function() {
+                const splash = document.getElementById('splash');
+                splash.classList.add('hidden');
+                setTimeout(function() { splash.remove(); }, 500);
+            }, 3000);
+        }
+        initApp();
+    </script>
+</body>
+</html>
