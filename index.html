@@ -1437,6 +1437,98 @@
             localStorage.setItem('solicitudesBiblioteca', JSON.stringify(solicitudes));
             localStorage.setItem('reseñasBiblioteca', JSON.stringify(reseñas));
             localStorage.setItem('approvedEmails', JSON.stringify(approvedEmails));
+
+
+
+    async function guardarDatos() {
+        localStorage.setItem('reservasBiblioteca', JSON.stringify(reservas));
+        localStorage.setItem('prestamosBiblioteca', JSON.stringify(prestamos));
+        localStorage.setItem('solicitudesBiblioteca', JSON.stringify(solicitudes));
+        localStorage.setItem('reseñasBiblioteca', JSON.stringify(reseñas));
+        localStorage.setItem('approvedEmails', JSON.stringify(approvedEmails));
+        localStorage.setItem('customColors', JSON.stringify(customColors));
+        localStorage.setItem('progressBiblioteca', JSON.stringify(userProgress));
+        
+        if (emailSesion === EMAIL_ADMIN) {
+            try {
+                const datos = {
+                    reservas,
+                    prestamos,
+                    solicitudes,
+                    reseñas,
+                    userProgress
+                };
+                const response = await fetch('http://localhost:3000/update-gist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datos)
+                });
+                if (!response.ok) throw new Error('Error al actualizar datos en el servidor');
+                console.log('Datos enviados al servidor');
+                showToast('¡Datos sincronizados globalmente!', 'success');
+            } catch (error) {
+                console.error('Error al guardar datos:', error);
+                showToast('Falla al guardar datos en el servidor.', 'error');
+            }
+        }
+    }
+
+    async function guardarDatos() {
+        localStorage.setItem('reservasBiblioteca', JSON.stringify(reservas));
+        localStorage.setItem('prestamosBiblioteca', JSON.stringify(prestamos));
+        localStorage.setItem('solicitudesBiblioteca', JSON.stringify(solicitudes));
+        localStorage.setItem('reseñasBiblioteca', JSON.stringify(reseñas));
+        localStorage.setItem('approvedEmails', JSON.stringify(approvedEmails));
+        localStorage.setItem('customColors', JSON.stringify(customColors));
+        localStorage.setItem('progressBiblioteca', JSON.stringify(userProgress));
+        
+        if (emailSesion === EMAIL_ADMIN) {
+            try {
+                const datos = {
+                    reservas,
+                    prestamos,
+                    solicitudes,
+                    reseñas,
+                    userProgress
+                };
+                const response = await fetch('http://localhost:3000/update-gist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datos)
+                });
+                if (!response.ok) throw new Error('Error al actualizar datos en el servidor');
+                console.log('Datos enviados al servidor');
+                showToast('¡Datos sincronizados globalmente!', 'success');
+            } catch (error) {
+                console.error('Error al guardar datos:', error);
+                showToast('Falla al guardar datos en el servidor.', 'error');
+            }
+        }
+    }
+
+    async function guardarApprovedEmailsToGist() {
+        if (emailSesion !== EMAIL_ADMIN) return;
+        try {
+            const response = await fetch('http://localhost:3000/update-gist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ approvedEmails })
+            });
+            if (!response.ok) throw new Error('Error al actualizar Gist');
+            console.log('Lista actualizada en Gist');
+            showToast('¡Lista sincronizada globalmente!', 'success');
+        } catch (error) {
+            console.error('Error guardando Gist:', error);
+            showToast('Falla al guardar. Verifica conexión con el servidor.', 'error');
+        }
+    }
+         
             // Guardar colores personalizados
             localStorage.setItem('customColors', JSON.stringify(customColors));
             // Gamificación: Guardar progreso
