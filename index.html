@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, inner-scale=1.0">
+    <title>Biblioteca Hipatia - IES CARPE DIEM</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/Kelonio-hub/prueba/main/logo%20biblioteca.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://raw.githubusercontent.com/Kelonio-hub/prueba/main/logo%20biblioteca.png">
+    <script src="js/main.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/main.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="splash">
+        <div class="splash-container">
+            <img src="https://raw.githubusercontent.com/Kelonio-hub/prueba/main/logo%20biblioteca.png"
+                 alt="Logo de la Biblioteca Hipatia"
+                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvZ28gTm8gQ2FycmVnYWRvPC90ZXh0Pjwvc3ZnPg=='">
+            <h2>¡Bienvenidos a la Biblioteca Hipatia!</h2>
+            <p>Cargando el catálogo de libros y aventuras...</p>
+        </div>
+    </div>
+    <!-- Toast notification -->
+    <div id="toast"></div>
+    <div id="loginSection">
+        <h2>Acceso a la Biblioteca</h2>
+        <button class="theme-toggle-login" onclick="toggleTheme()" aria-label="Cambiar tema">🌙</button>
+        <p>Solo usuarios @educa.madrid.org aprobados</p>
+        <input type="email" id="loginEmail" placeholder="Introduce tu email @educa.madrid.org">
+        <br>
+        <button onclick="login()">Acceder 📖</button>
+        <p id="loginError" style="color: var(--danger); display: none;">Email inválido o no aprobado.</p>
+    </div>
+    <div id="app">
+        <header>
+            <div class="theme-controls">
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema">🌙</button>
+                <button class="customize-colors" onclick="openColorModal()" aria-label="Personalizar colores">🌈</button>
+            </div>
+            <h1>Catálogo de la Biblioteca Hipatia</h1>
+            <p>IES CARPE DIEM, Fuenlabrada</p>
+            <div class="header-search">
+                <input type="text" id="buscarInput" placeholder="Busca por título, autor, tejuelo, categoría" onkeypress="if(event.key === 'Enter') buscarLibros()" list="sugerenciasBusqueda">
+                <datalist id="sugerenciasBusqueda"></datalist>
+                <button onclick="buscarLibros()">Buscar 🔍</button>
+            </div>
+            <div class="email-section" id="emailSection">
+                <span id="adminBadge" class="admin-badge" style="display: none;" onclick="mostrarHistorialAdmin()">
+                    ADMIN
+                    <span id="notificationCount" class="notification-count" style="display: none;"></span>
+                </span>
+                <button class="btn-flotante btn-solicitudes" id="btnSolicitudes" style="display: none;" onclick="abrirModalSolicitudes()">Solicitudes de Libros 📝</button>
+                <button class="btn-flotante btn-reseñas" id="btnReseñas" style="display: none;" onclick="abrirModalReseñas()">Reseñas de Libros ⭐</button>
+                <button class="btn-flotante btn-mas-prestados" id="btnLecturasPrestadas" style="display: none;" onclick="abrirModalLecturasPrestadas()">Lecturas más Prestadas 📊</button>
+                <!-- Intercambio de posiciones: Web del IES ahora antes de Cerrar Sesión -->
+                <button class="btn-flotante web-ies-btn" onclick="window.open('https://site.educa.madrid.org/ies.carpediem.fuenlabrada/', '_blank')">Web del IES 🌐</button>
+                <button class="btn-flotante logout-btn" onclick="logout()">Cerrar Sesión 👋</button>
+            </div>
+        </header>
+        <main>
+            <section id="seccionIzquierda" style="display: none;">
+                <h2>Mi Perfil Lector</h2>
+                <p id="emailDisplay" style="display: none;"></p>
+             
+                <!-- Nueva sección de gamificación (más compacta) -->
+                <div id="progresoLector" onclick="abrirModalProgreso()">
+                    <div class="progress-header">
+                        <span class="nivel-actual">Nivel Actual: <span id="nivelBadge" class="badge-nivel">Lector Iniciado 🔍</span></span>
+                        <span id="puntosDisplay">0 puntos</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <p class="puntos-total">¡Haz clic para ver cómo ganar puntos!</p>
+                </div>
+             
+                <div id="misReservas">
+                    <h3>Mis Reservas</h3>
+                    <p>Aquí aparecerán los libros que has reservado.</p>
+                </div>
+             
+                <div id="misPrestamos">
+                    <h3>Mis Préstamos</h3>
+                    <p>Aquí verás los libros que tienes en préstamo actualmente.</p>
+                </div>
+                <div id="recomendaciones">
+                    <h3>Recomendaciones Personalizadas 💡</h3>
+                    <p>Basadas en tus lecturas anteriores.</p>
+                    <div id="listaRecomendaciones"></div>
+                </div>
+            </section>
+            <section id="seccionDerecha" style="display: none;">
+                <h2>Hipat-IA</h2>
+                <p>¡Tu Bibliotecaria Virtual! 👩‍💼</p>
+                <div id="chatMensajes"></div>
+                <div class="chat-controls">
+                    <input type="text" id="chatInput" placeholder="Libros, sinopsis, recomendaciones..." onkeypress="if(event.key === 'Enter') enviarMensaje()">
+                    <button onclick="enviarMensaje()">Enviar 💬</button>
+                    <button class="btn-limpiar-chat" onclick="limpiarChat()">Limpiar Chat 🗑️</button>
+                </div>
+            </section>
+            <section id="adminHistorial" style="display: none;">
+                <h2>Administración</h2>
+                <div id="adminTabs">
+                    <button class="tab-btn active" onclick="showAdminTab('tareas')">Tareas Pendientes</button>
+                    <button class="tab-btn" onclick="showAdminTab('historial')">Historial Completo</button>
+                    <button class="tab-btn" onclick="showAdminTab('correos')">Gestión de Correos</button>
+                    <button class="tab-btn" onclick="showAdminTab('solicitudes')">Solicitudes de Libros</button>
+                </div>
+                <div id="adminTabContent"></div>
+            </section>
+        </main>
+        <!-- Modal para resultados de búsqueda -->
+        <div id="searchModal">
+            <div id="searchModalContent">
+                <span class="modal-close" onclick="cerrarModal()">&times;</span>
+                <h3>Resultados de Búsqueda</h3>
+                <div id="conteoResultadosModal"></div>
+                <div id="resultadosModal"></div>
+                <div id="searchPagination" class="pagination"></div>
+            </div>
+        </div>
+        <!-- Modal para Solicitudes -->
+        <div id="solicitudesModal">
+            <div id="solicitudesModalContent">
+                <span class="modal-close" onclick="cerrarModalSolicitudes()">&times;</span>
+                <h3>SOLICITUD DE LIBROS</h3>
+                <p>¡Cuéntanos cuál será tu próxima aventura!</p>
+                <textarea id="solicitudTextarea" maxlength="500" placeholder="Indica los libros que más te interesaría leer en el IES"></textarea>
+                <div class="contador-palabras">
+                    <span id="contador">0/500 palabras</span>
+                </div>
+                <button onclick="enviarSolicitud()">Enviar Solicitud 📝</button>
+                <div id="misSolicitudesEnviadas" class="lista-enviadas">
+                    <h4>Mis Solicitudes Enviadas</h4>
+                    <p>Aquí verás las solicitudes que has compartido.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Modal para Reseñas (ahora con selección de libro y ratings) -->
+        <div id="reseñasModal">
+            <div id="reseñasModalContent">
+                <span class="modal-close" onclick="cerrarModalReseñas()">&times;</span>
+                <h3>RESEÑA DE LIBROS</h3>
+                <p>¡Cuéntanos qué libros te has leído y qué te han parecido!</p>
+                <label for="libroReseñaSelect">Selecciona un libro reseñado:</label>
+                <select id="libroReseñaSelect">
+                    <option value="">Elige un libro de tus préstamos</option>
+                </select>
+                <label>Valoración (1-5 estrellas):</label>
+                <fieldset class="rating-stars">
+                    <input type="radio" id="star5" name="rating" value="5">
+                    <label for="star5">★</label>
+                    <input type="radio" id="star4" name="rating" value="4">
+                    <label for="star4">★</label>
+                    <input type="radio" id="star3" name="rating" value="3">
+                    <label for="star3">★</label>
+                    <input type="radio" id="star2" name="rating" value="2">
+                    <label for="star2">★</label>
+                    <input type="radio" id="star1" name="rating" value="1">
+                    <label for="star1">★</label>
+                </fieldset>
+                <textarea id="reseñaTextarea" maxlength="500" placeholder="Tus experiencias nos ayudan a conocer mejor tus gustos"></textarea>
+                <div class="contador-palabras">
+                    <span id="contadorReseñas">0/500 palabras</span>
+                </div>
+                <button onclick="enviarReseña()">Enviar Reseña ⭐</button>
+                <div id="misReseñasEnviadas" class="lista-enviadas">
+                    <h4>Mis Reseñas Enviadas</h4>
+                    <p>Aquí verás las reseñas que has compartido.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Modal para Lecturas Más Prestadas (con gráfico) -->
+        <div id="lecturasMasPrestadasModal">
+            <div id="lecturasMasPrestadasModalContent">
+                <span class="modal-close" onclick="cerrarModalLecturasPrestadas()">&times;</span>
+                <h3>Lecturas Más Prestadas</h3>
+                <p>Top 10 de las lecturas más populares en la biblioteca.</p>
+                <div id="listaLecturasPrestadas"></div>
+            </div>
+        </div>
+        <!-- Nueva Modal para Progreso y Acciones de Puntos -->
+        <div id="progresoModal">
+            <div id="progresoModalContent">
+                <span class="modal-close" onclick="cerrarModalProgreso()">&times;</span>
+                <h3>¡Gana Puntos y Sube de Nivel! 🎮</h3>
+                <p>Estas son las acciones que te ayudan a progresar como lector.</p>
+                <ul class="acciones-puntos">
+                    <li><span>Reservar y recoger un libro</span><span class="puntos-accion">+15 pts</span></li>
+                    <li><span>Devolver a tiempo</span><span class="puntos-accion">+10 pts</span></li>
+                    <li><span>Escribir una reseña</span><span class="puntos-accion">+20 pts</span></li>
+                    <li><span>Solicitar un libro nuevo</span><span class="puntos-accion">+10 pts</span></li>
+                    <li><span>Devolver con retraso</span><span class="puntos-accion negativo">-5 pts</span></li>
+                    <li><span>Devolver dañado/roto</span><span class="puntos-accion negativo">-20 pts</span></li>
+                </ul>
+                <p><em>¡Cuanto más leas y compartas, más rápido subes de nivel!</em></p>
+            </div>
+        </div>
+        <!-- Modal de Personalización de Colores -->
+        <div id="colorModal">
+            <div id="colorModalContent">
+                <span class="modal-close" onclick="closeColorModal()">&times;</span>
+                <h3>Personaliza Tus Colores 🌈</h3>
+                <p>Elige colores para elementos clave. Los cambios se aplican en tiempo real en ambos temas. Se guardarán al confirmar.</p>
+                <div class="color-group">
+                    <label for="bg-primary">Fondo Principal:</label>
+                    <input type="color" id="bg-primary">
+                </div>
+                <div class="color-group">
+                    <label for="bg-secondary">Fondo Secundario (secciones):</label>
+                    <input type="color" id="bg-secondary">
+                </div>
+                <div class="color-group">
+                    <label for="text-primary">Texto Principal:</label>
+                    <input type="color" id="text-primary">
+                </div>
+                <div class="color-group">
+                    <label for="text-secondary">Texto Secundario:</label>
+                    <input type="color" id="text-secondary">
+                </div>
+                <div class="color-group">
+                    <label for="btn-primary">Botones Principales:</label>
+                    <input type="color" id="btn-primary">
+                </div>
+                <div class="color-group">
+                    <label for="border-color">Bordes:</label>
+                    <input type="color" id="border-color">
+                </div>
+                <div class="color-group">
+                    <label for="btn-flotante-bg">Fondo Botones Flotantes:</label>
+                    <input type="color" id="btn-flotante-bg">
+                </div>
+                <div class="color-group">
+                    <label for="btn-flotante-color">Texto Botones Flotantes:</label>
+                    <input type="color" id="btn-flotante-color">
+                </div>
+                <div class="color-group">
+                    <label for="btn-flotante-hover-bg">Hover Botones Flotantes:</label>
+                    <input type="color" id="btn-flotante-hover-bg">
+                </div>
+                <div class="color-group">
+                    <label for="bot-msg-color">Color Texto Chat-Bot:</label>
+                    <input type="color" id="bot-msg-color">
+                </div>
+                <button onclick="saveCustomColors()">Guardar y Cerrar 💾</button>
+                <button onclick="resetCustomColors()">Restablecer Predeterminados 🔄</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/main.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
