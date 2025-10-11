@@ -1,0 +1,149 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="splashScreen" style="display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0;">
+        <img src="https://via.placeholder.com/150" alt="Logo Biblioteca">
+    </div>
+    <div id="loginSection">
+        <!-- Contenido de login (mantener el original) -->
+        <input type="email" id="emailInput" placeholder="Correo electrónico">
+        <button onclick="login()">Iniciar Sesión</button>
+    </div>
+    <div id="app" style="display: none;">
+        <!-- Contenido de la app (mantener el original) -->
+        <div id="adminBadge" style="display: none;">Admin</div>
+        <div id="seccionIzquierda"></div>
+        <div id="seccionDerecha"></div>
+        <div id="adminHistorial" style="display: none;"></div>
+        <button id="btnSolicitudes" style="display: none;">Solicitudes</button>
+        <button id="btnReseñas" style="display: none;">Reseñas</button>
+        <button id="btnLecturasPrestadas" style="display: none;">Lecturas Prestadas</button>
+    </div>
+
+    <script src="js/variables.js"></script>
+    <script src="js/login.js"></script>
+    <script src="js/catalogo.js"></script>
+    <!-- Otros scripts necesarios, como tema.js, perfil.js, etc. -->
+    <script>
+        // Función para ocultar el splash
+        function hideSplash() {
+            console.log('Ocultando splash...');
+            document.getElementById('splashScreen').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+        }
+
+        // Función de inicialización
+        async function initApp() {
+            console.log('Iniciando initApp...');
+            try {
+                loadTheme(); // Cargar tema
+                await cargarDatos(); // Cargar datos (Gist, reservas, etc.)
+                const emailSesionGuardada = sessionStorage.getItem('emailSesion');
+                if (emailSesionGuardada) {
+                    console.log('Sesión activa encontrada: ', emailSesionGuardada);
+                    emailSesion = emailSesionGuardada;
+                    document.getElementById('adminBadge').style.display = 'none';
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('app').style.display = 'block';
+                    if (emailSesion === EMAIL_ADMIN) {
+                        document.getElementById('seccionIzquierda').style.display = 'none';
+                        document.getElementById('seccionDerecha').style.display = 'none';
+                        document.getElementById('adminHistorial').style.display = 'block';
+                        document.getElementById('btnSolicitudes').style.display = 'none';
+                        document.getElementById('btnReseñas').style.display = 'none';
+                        document.getElementById('btnLecturasPrestadas').style.display = 'none';
+                        updateNotificationBadge();
+                        showAdminTab('tareas');
+                    } else {
+                        document.getElementById('seccionIzquierda').style.display = 'block';
+                        document.getElementById('seccionDerecha').style.display = 'block';
+                        document.getElementById('adminHistorial').style.display = 'none';
+                        document.getElementById('btnSolicitudes').style.display = 'inline-block';
+                        document.getElementById('btnReseñas').style.display = 'inline-block';
+                        document.getElementById('btnLecturasPrestadas').style.display = 'inline-block';
+                        inicializarProgreso(emailSesion);
+                        cargarPerfil();
+                    }
+                    cargarCatalogo();
+                } else {
+                    console.log('No hay sesión activa, mostrando loginSection');
+                    document.getElementById('loginSection').style.display = 'block';
+                    document.getElementById('app').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error en initApp:', error);
+                showToast('Error al inicializar la aplicación. Mostrando login.', 'error');
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('app').style.display = 'none';
+            }
+        }
+
+        // Mostrar splash por 3 segundos y luego inicializar
+        setTimeout(() => {
+            hideSplash();
+            initApp();
+        }, 3000);
+
+        // Manejo de clics para cerrar modales
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            const modalReserva = document.getElementById('modalReserva');
+            const modalReseña = document.getElementById('modalReseña');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            } else if (event.target === modalReserva) {
+                modalReserva.style.display = 'none';
+            } else if (event.target === modalReseña) {
+                modalReseña.style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>
