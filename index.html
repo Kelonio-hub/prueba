@@ -1,0 +1,275 @@
+!DOCTYPE html
+html lang=es
+head
+    meta charset=UTF-8
+    meta name=viewport content=width=device-width, initial-scale=1.0
+    titleBiblioteca Hipatia - IES CARPE DIEMtitle
+    link rel=icon type=imagex-icon href=favicon.ico
+    link rel=icon type=imagepng href=httpsraw.githubusercontent.comKelonio-hubpruebamainlogo%20biblioteca.png
+    link rel=apple-touch-icon sizes=180x180 href=httpsraw.githubusercontent.comKelonio-hubpruebamainlogo%20biblioteca.png
+    script src=httpscdn.jsdelivr.netnpm@emailjsbrowser@3distemail.min.jsscript
+    script src=httpscdnjs.cloudflare.comajaxlibsxlsx0.18.5xlsx.full.min.jsscript
+    script
+        (function(){
+            emailjs.init(YOUR_USER_ID);
+        })();
+    script
+    link rel=stylesheet href=styles.css
+head
+body
+    div id=splash
+        div class=splash-container
+            img src=httpsraw.githubusercontent.comKelonio-hubpruebamainlogo%20biblioteca.png
+                 alt=Logo de la Biblioteca Hipatia
+                 onerror=this.src='dataimagesvg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvZ28gTm8gQ2FycmVnYWRvPC90ZXh0Pjwvc3ZnPg=='
+            h2¡Bienvenidos a la Biblioteca Hipatia!h2
+            pCargando el catálogo de libros y aventuras...p
+        div
+    div
+    !-- Toast notification --
+    div id=toastdiv
+    div id=loginSection
+        h2Acceso a la Bibliotecah2
+        button class=theme-toggle-login onclick=toggleTheme() aria-label=Cambiar tema🌙button
+        pSolo usuarios @educa.madrid.org aprobadosp
+        input type=email id=loginEmail placeholder=Introduce tu email @educa.madrid.org
+        br
+        button onclick=login()Acceder 📖button
+        p id=loginError style=color var(--danger); display none;Email inválido o no aprobado.p
+    div
+    div id=app
+        header
+            div class=theme-controls
+                button class=theme-toggle onclick=toggleTheme() aria-label=Cambiar tema🌙button
+                button class=customize-colors onclick=openColorModal() aria-label=Personalizar colores🌈button
+            div
+            h1Catálogo de la Biblioteca Hipatiah1
+            pIES CARPE DIEM, Fuenlabradap
+            div class=header-search
+                input type=text id=buscarInput placeholder=Busca por título, autor, tejuelo, categoría onkeypress=if(event.key === 'Enter') buscarLibros() list=sugerenciasBusqueda
+                datalist id=sugerenciasBusquedadatalist
+                button onclick=buscarLibros()Buscar 🔍button
+            div
+            div class=email-section id=emailSection
+                span id=adminBadge class=admin-badge style=display none; onclick=mostrarHistorialAdmin()
+                    ADMIN
+                    span id=notificationCount class=notification-count style=display none;span
+                span
+                button class=btn-flotante btn-solicitudes id=btnSolicitudes style=display none; onclick=abrirModalSolicitudes()Solicitudes de Libros 📝button
+                button class=btn-flotante btn-reseñas id=btnReseñas style=display none; onclick=abrirModalReseñas()Reseñas de Libros ⭐button
+                button class=btn-flotante btn-mas-prestados id=btnLecturasPrestadas style=display none; onclick=abrirModalLecturasPrestadas()Lecturas más Prestadas 📊button
+                !-- Intercambio de posiciones Web del IES ahora antes de Cerrar Sesión --
+                button class=btn-flotante web-ies-btn onclick=window.open('httpssite.educa.madrid.orgies.carpediem.fuenlabrada', '_blank')Web del IES 🌐button
+                button class=btn-flotante logout-btn onclick=logout()Cerrar Sesión 👋button
+            div
+        header
+        main
+            section id=seccionIzquierda style=display none;
+                h2Mi Perfil Lectorh2
+                p id=emailDisplay style=display none;p
+             
+                !-- Nueva sección de gamificación (más compacta) --
+                div id=progresoLector onclick=abrirModalProgreso()
+                    div class=progress-header
+                        span class=nivel-actualNivel Actual span id=nivelBadge class=badge-nivelLector Iniciado 🔍spanspan
+                        span id=puntosDisplay0 puntosspan
+                    div
+                    div class=progress-bar
+                        div id=progressFill class=progress-fill style=width 0%;div
+                    div
+                    p class=puntos-total¡Haz clic para ver cómo ganar puntos!p
+                div
+             
+                div id=misReservas
+                    h3Mis Reservash3
+                    pAquí aparecerán los libros que has reservado.p
+                div
+             
+                div id=misPrestamos
+                    h3Mis Préstamosh3
+                    pAquí verás los libros que tienes en préstamo actualmente.p
+                div
+                div id=recomendaciones
+                    h3Recomendaciones Personalizadas 💡h3
+                    pBasadas en tus lecturas anteriores.p
+                    div id=listaRecomendacionesdiv
+                div
+            section
+            section id=seccionDerecha style=display none;
+                h2Hipat-IAh2
+                p¡Tu Bibliotecaria Virtual! 👩‍💼p
+                div id=chatMensajesdiv
+                div class=chat-controls
+                    input type=text id=chatInput placeholder=Libros, sinopsis, recomendaciones... onkeypress=if(event.key === 'Enter') enviarMensaje()
+                    button onclick=enviarMensaje()Enviar 💬button
+                    button class=btn-limpiar-chat onclick=limpiarChat()Limpiar Chat 🗑️button
+                div
+            section
+            section id=adminHistorial style=display none;
+                h2Administraciónh2
+                div id=adminTabs
+                    button class=tab-btn active onclick=showAdminTab('tareas')Tareas Pendientesbutton
+                    button class=tab-btn onclick=showAdminTab('historial')Historial Completobutton
+                    button class=tab-btn onclick=showAdminTab('correos')Gestión de Correosbutton
+                    button class=tab-btn onclick=showAdminTab('solicitudes')Solicitudes de Librosbutton
+                div
+                div id=adminTabContentdiv
+            section
+        main
+        !-- Modal para resultados de búsqueda --
+        div id=searchModal
+            div id=searchModalContent
+                span class=modal-close onclick=cerrarModal()&times;span
+                h3Resultados de Búsquedah3
+                div id=conteoResultadosModaldiv
+                div id=resultadosModaldiv
+                div id=searchPagination class=paginationdiv
+            div
+        div
+        !-- Modal para Solicitudes --
+        div id=solicitudesModal
+            div id=solicitudesModalContent
+                span class=modal-close onclick=cerrarModalSolicitudes()&times;span
+                h3SOLICITUD DE LIBROSh3
+                p¡Cuéntanos cuál será tu próxima aventura!p
+                textarea id=solicitudTextarea maxlength=500 placeholder=Indica los libros que más te interesaría leer en el IEStextarea
+                div class=contador-palabras
+                    span id=contador0500 palabrasspan
+                div
+                button onclick=enviarSolicitud()Enviar Solicitud 📝button
+                div id=misSolicitudesEnviadas class=lista-enviadas
+                    h4Mis Solicitudes Enviadash4
+                    pAquí verás las solicitudes que has compartido.p
+                div
+            div
+        div
+        !-- Modal para Reseñas (ahora con selección de libro y ratings) --
+        div id=reseñasModal
+            div id=reseñasModalContent
+                span class=modal-close onclick=cerrarModalReseñas()&times;span
+                h3RESEÑA DE LIBROSh3
+                p¡Cuéntanos qué libros te has leído y qué te han parecido!p
+                label for=libroReseñaSelectSelecciona un libro reseñadolabel
+                select id=libroReseñaSelect
+                    option value=Elige un libro de tus préstamosoption
+                select
+                labelValoración (1-5 estrellas)label
+                fieldset class=rating-stars
+                    input type=radio id=star5 name=rating value=5
+                    label for=star5★label
+                    input type=radio id=star4 name=rating value=4
+                    label for=star4★label
+                    input type=radio id=star3 name=rating value=3
+                    label for=star3★label
+                    input type=radio id=star2 name=rating value=2
+                    label for=star2★label
+                    input type=radio id=star1 name=rating value=1
+                    label for=star1★label
+                fieldset
+                textarea id=reseñaTextarea maxlength=500 placeholder=Tus experiencias nos ayudan a conocer mejor tus gustostextarea
+                div class=contador-palabras
+                    span id=contadorReseñas0500 palabrasspan
+                div
+                button onclick=enviarReseña()Enviar Reseña ⭐button
+                div id=misReseñasEnviadas class=lista-enviadas
+                    h4Mis Reseñas Enviadash4
+                    pAquí verás las reseñas que has compartido.p
+                div
+            div
+        div
+        !-- Modal para Lecturas Más Prestadas (con gráfico) --
+        div id=lecturasMasPrestadasModal
+            div id=lecturasMasPrestadasModalContent
+                span class=modal-close onclick=cerrarModalLecturasPrestadas()&times;span
+                h3Lecturas Más Prestadash3
+                pTop 10 de las lecturas más populares en la biblioteca.p
+                div id=listaLecturasPrestadasdiv
+            div
+        div
+        !-- Nueva Modal para Progreso y Acciones de Puntos --
+        div id=progresoModal
+            div id=progresoModalContent
+                span class=modal-close onclick=cerrarModalProgreso()&times;span
+                h3¡Gana Puntos y Sube de Nivel! 🎮h3
+                pEstas son las acciones que te ayudan a progresar como lector.p
+                ul class=acciones-puntos
+                    lispanReservar y recoger un librospanspan class=puntos-accion+15 ptsspanli
+                    lispanDevolver a tiempospanspan class=puntos-accion+10 ptsspanli
+                    lispanEscribir una reseñaspanspan class=puntos-accion+20 ptsspanli
+                    lispanSolicitar un libro nuevospanspan class=puntos-accion+10 ptsspanli
+                    lispanDevolver con retrasospanspan class=puntos-accion negativo-5 ptsspanli
+                    lispanDevolver dañadorotospanspan class=puntos-accion negativo-20 ptsspanli
+                ul
+                pem¡Cuanto más leas y compartas, más rápido subes de nivel!emp
+            div
+        div
+        !-- Modal de Personalización de Colores --
+        div id=colorModal
+            div id=colorModalContent
+                span class=modal-close onclick=closeColorModal()&times;span
+                h3Personaliza Tus Colores 🌈h3
+                pElige colores para elementos clave. Los cambios se aplican en tiempo real en ambos temas. Se guardarán al confirmar.p
+                div class=color-group
+                    label for=bg-primaryFondo Principallabel
+                    input type=color id=bg-primary
+                div
+                div class=color-group
+                    label for=bg-secondaryFondo Secundario (secciones)label
+                    input type=color id=bg-secondary
+                div
+                div class=color-group
+                    label for=text-primaryTexto Principallabel
+                    input type=color id=text-primary
+                div
+                div class=color-group
+                    label for=text-secondaryTexto Secundariolabel
+                    input type=color id=text-secondary
+                div
+                div class=color-group
+                    label for=btn-primaryBotones Principaleslabel
+                    input type=color id=btn-primary
+                div
+                div class=color-group
+                    label for=border-colorBordeslabel
+                    input type=color id=border-color
+                div
+                div class=color-group
+                    label for=btn-flotante-bgFondo Botones Flotanteslabel
+                    input type=color id=btn-flotante-bg
+                div
+                div class=color-group
+                    label for=btn-flotante-colorTexto Botones Flotanteslabel
+                    input type=color id=btn-flotante-color
+                div
+                div class=color-group
+                    label for=btn-flotante-hover-bgHover Botones Flotanteslabel
+                    input type=color id=btn-flotante-hover-bg
+                div
+                div class=color-group
+                    label for=bot-msg-colorColor Texto Chat-Botlabel
+                    input type=color id=bot-msg-color
+                div
+                button onclick=saveCustomColors()Guardar y Cerrar 💾button
+                button onclick=resetCustomColors()Restablecer Predeterminados 🔄button
+            div
+        div
+    div
+    script type=textjavascript src=xlsx-helper.jsscript
+    script src=variables.jsscript
+    script src=colors.jsscript
+    script src=theme.jsscript
+    script src=gamification.jsscript
+    script src=toast.jsscript
+    script src=login.jsscript
+    script src=perfil.jsscript
+    script src=solicitudes.jsscript
+    script src=resenas.jsscript
+    script src=lecturas.jsscript
+    script src=admin.jsscript
+    script src=search.jsscript
+    script src=chat.jsscript
+    script src=catalogo.jsscript
+    script src=splash.jsscript
+    script src=init.jsscript
+body
+html
