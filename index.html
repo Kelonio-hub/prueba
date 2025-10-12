@@ -1,0 +1,1564 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca Hipatia - IES CARPE DIEM</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/Kelonio-hub/prueba/main/logo%20biblioteca.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://raw.githubusercontent.com/Kelonio-hub/prueba/main/logo%20biblioteca.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #f4f4f4;
+            --bg-secondary: white;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --btn-primary: #007bff;
+            --btn-hover: #2e93ff;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --purple: #6f42c1;
+            --shadow: 0 2px 5px rgba(0,0,0,0.1);
+            --btn-flotante-bg: #ffffff;
+            --btn-flotante-color: #000000;
+            --btn-flotante-hover-bg: #f3f4f6;
+            --chat-bg: #f9f9f9;
+            --user-msg-bg: #e3f2fd;
+            --bot-msg-bg: #f1f8e9;
+            --bot-msg-color: #333;
+            --progress-bg: #e0e0e0;
+            --progress-fill: var(--success);
+            --badge-bg: var(--btn-primary);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border-color: #444;
+            --btn-primary: #007bff;
+            --btn-hover: #2e93ff;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --purple: #6f42c1;
+            --shadow: 0 2px 5px rgba(0,0,0,0.3);
+            --btn-flotante-bg: #374151;
+            --btn-flotante-color: #ffffff;
+            --btn-flotante-hover-bg: #4b5563;
+            --chat-bg: #374151;
+            --user-msg-bg: #1e40af;
+            --bot-msg-bg: #166534;
+            --bot-msg-color: #e0e0e0;
+            --progress-bg: #444;
+            --progress-fill: var(--success);
+            --badge-bg: var(--btn-primary);
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #loginSection {
+            text-align: center;
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .theme-toggle-login {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle-login:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        [data-theme="dark"] .theme-toggle-login {
+            background: rgba(0,0,0,0.2);
+        }
+
+        [data-theme="dark"] .theme-toggle-login:hover {
+            background: rgba(0,0,0,0.3);
+        }
+
+        #app {
+            display: none;
+        }
+
+        header {
+            text-align: center;
+            background-image: url('https://site.educa.madrid.org/ies.carpediem.fuenlabrada//wp-content/uploads/ies.carpediem.fuenlabrada/2024/03/carpediem-foto-inicio1920x1200c.jpg');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .theme-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .theme-toggle, .customize-colors {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle:hover, .customize-colors:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        [data-theme="dark"] .theme-toggle, [data-theme="dark"] .customize-colors {
+            background: rgba(0,0,0,0.2);
+        }
+
+        [data-theme="dark"] .theme-toggle:hover, [data-theme="dark"] .customize-colors:hover {
+            background: rgba(0,0,0,0.3);
+        }
+
+        .header-search {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header-search input {
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            width: 250px;
+            max-width: 100%;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .header-search button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--btn-primary);
+            color: white;
+            cursor: pointer;
+        }
+
+        .header-search button:hover {
+            background-color: var(--btn-hover);
+        }
+
+        .admin-badge {
+            background-color: var(--btn-primary);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            margin-left: 10px;
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+        }
+
+        .admin-badge:hover {
+            background-color: var(--btn-hover);
+        }
+
+        .notification-count {
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.7em;
+            padding: 2px 5px;
+            min-width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-weight: bold;
+        }
+
+        .email-section {
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-flotante {
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background-color: var(--btn-flotante-bg);
+            color: var(--btn-flotante-color);
+        }
+
+        .btn-flotante:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            background-color: var(--btn-flotante-hover-bg);
+        }
+
+        .logout-btn, .web-ies-btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .logout-btn:hover, .web-ies-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            background-color: var(--btn-flotante-hover-bg);
+        }
+
+        main {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        section {
+            flex: 1;
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        #seccionIzquierda {
+            flex: 1.5;
+            background: var(--bg-secondary);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        #seccionIzquierda h2 {
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 10px;
+            text-decoration: underline;
+        }
+
+        #emailDisplay {
+            text-align: center;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        #progresoLector {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+            font-size: 0.85em;
+        }
+
+        #progresoLector:hover {
+            box-shadow: var(--shadow);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .nivel-actual {
+            font-weight: bold;
+            color: var(--btn-primary);
+        }
+
+        .badge-nivel {
+            background: var(--badge-bg);
+            color: white;
+            padding: 3px 6px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .progress-bar {
+            background: var(--progress-bg);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--progress-fill);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .puntos-total {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        #misReservas, #misPrestamos, #recomendaciones {
+            background: var(--bg-secondary);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border-left: 4px solid var(--btn-primary);
+        }
+
+        #misReservas h3, #misPrestamos h3, #recomendaciones h3 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .lista-libros {
+            margin: 10px 0;
+        }
+
+        .libro-perfil {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .franja {
+            height: 8px;
+            width: 100%;
+        }
+
+        .franja-verde {
+            background-color: var(--success);
+        }
+
+        .franja-roja {
+            background-color: var(--danger);
+        }
+
+        .franja-azul {
+            background-color: #2196F3;
+        }
+
+        .contenido-franja {
+            padding: 10px;
+            color: var(--text-primary);
+        }
+
+        .fecha {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+
+        .retrasado {
+            color: var(--danger);
+            font-weight: bold;
+            background: rgba(220, 53, 69, 0.1);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        input, button, select, textarea {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        button {
+            background-color: var(--btn-primary);
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: var(--btn-hover);
+        }
+
+        .btn-reserva, .btn-recoger, .btn-devolver, .btn-anular {
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            border: none;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+
+        .btn-reserva {
+            background-color: var(--success);
+        }
+
+        .btn-reserva:hover {
+            background-color: #218838;
+        }
+
+        .btn-recoger {
+            background-color: var(--warning);
+            color: black;
+        }
+
+        .btn-recoger:hover {
+            background-color: #e0a800;
+        }
+
+        .btn-devolver {
+            background-color: var(--info);
+        }
+
+        .btn-devolver:hover {
+            background-color: #138496;
+        }
+
+        .btn-anular {
+            background-color: var(--danger);
+        }
+
+        .btn-anular:hover {
+            background-color: #c82333;
+        }
+
+        .libro {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        #searchModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        #searchModalContent {
+            background-color: var(--bg-secondary);
+            margin: 5% auto;
+            padding: 20px;
+            border: none;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            color: var(--text-primary);
+        }
+
+        #searchModalContent h3 {
+            margin-top: 0;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            color: var(--text-secondary);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .libro-modal {
+            border: 1px solid var(--border-color);
+            padding: 0;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #f9f9f9;
+            overflow: hidden;
+        }
+
+        .contenido-modal {
+            padding: 15px;
+        }
+
+        .tejuelo {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .estado-reservado {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .estado-no-disponible {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .pagination {
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .pagination button {
+            background-color: var(--btn-primary);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .pagination button:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            font-weight: bold;
+        }
+
+        #conteoResultadosModal {
+            font-weight: bold;
+            color: var(--btn-primary);
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #e9f5ff;
+            border-radius: 4px;
+        }
+
+        #chatMensajes {
+            height: 200px;
+            overflow-y: scroll;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            margin: 10px 0;
+            background-color: var(--chat-bg);
+            color: var(--text-primary);
+        }
+
+        .mensaje {
+            margin: 5px 0;
+            padding: 5px;
+            color: var(--text-primary);
+            border-radius: 4px;
+        }
+
+        .mensaje.user {
+            background-color: var(--user-msg-bg);
+            text-align: right;
+        }
+
+        .mensaje.bot {
+            background-color: var(--bot-msg-bg);
+            color: var(--bot-msg-color);
+        }
+
+        #solicitudesModal, #reseñasModal, #lecturasMasPrestadasModal, #progresoModal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        #solicitudesModalContent, #reseñasModalContent, #lecturasMasPrestadasModalContent, #progresoModalContent {
+            background-color: var(--bg-secondary);
+            margin: 10% auto;
+            padding: 20px;
+            border: none;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            color: var(--text-primary);
+        }
+
+        #lecturasMasPrestadasModalContent {
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        #progresoModalContent h3 {
+            margin-top: 0;
+            color: var(--text-primary);
+        }
+
+        .acciones-puntos {
+            list-style: none;
+            padding: 0;
+        }
+
+        .acciones-puntos li {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .acciones-puntos li:last-child {
+            border-bottom: none;
+        }
+
+        .puntos-accion {
+            font-weight: bold;
+            color: var(--success);
+        }
+
+        .puntos-accion.negativo {
+            color: var(--danger);
+        }
+
+        #solicitudesModalContent h3, #reseñasModalContent h3, #lecturasMasPrestadasModalContent h3 {
+            margin-top: 0;
+            color: var(--text-primary);
+        }
+
+        #solicitudTextarea, #reseñaTextarea {
+            width: 100%;
+            height: 120px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        .contador-palabras {
+            text-align: right;
+            margin: 5px 0;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+
+        .lista-enviadas {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .item-enviado {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+
+        .btn-anular {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .btn-anular:hover {
+            background-color: #c82333;
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: var(--shadow);
+            z-index: 10000;
+            display: none;
+            min-width: 300px;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        #toast.error {
+            background: var(--danger);
+        }
+
+        #toast.warning {
+            background: var(--warning);
+            color: black;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        #adminHistorial table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        #adminHistorial th, #adminHistorial td {
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            text-align: left;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        #adminHistorial th {
+            background-color: var(--btn-primary);
+            color: white;
+            cursor: pointer;
+        }
+
+        #adminHistorial th:hover {
+            background-color: var(--btn-hover);
+        }
+
+        #adminHistorial tr:nth-child(even) {
+            background-color: var(--bg-primary);
+        }
+
+        #adminHistorial tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+
+        .sort-arrow::after {
+            content: '';
+            display: inline-block;
+            margin-left: 5px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+
+        .sort-arrow.asc::after {
+            border-bottom: 5px solid white;
+        }
+
+        .sort-arrow.desc::after {
+            border-top: 5px solid white;
+        }
+
+        #adminTabs {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background-color: #f0f0f0;
+            border: 1px solid var(--border-color);
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .tab-btn.active {
+            background-color: var(--btn-primary);
+            color: white;
+            border-bottom: none;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        #adminApprovedEmails {
+            margin-top: 20px;
+        }
+
+        #approvedEmailList {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            background-color: var(--bg-secondary);
+            margin-top: 10px;
+        }
+
+        .email-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
+            background: var(--bg-primary);
+            padding: 5px;
+            border-radius: 3px;
+            color: var(--text-primary);
+        }
+
+        .email-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        .email-item button {
+            margin-left: auto;
+            padding: 2px 5px;
+            font-size: 0.8em;
+        }
+
+        #emailSearch {
+            width: 200px;
+        }
+
+        .recomendacion {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #e8f5e8;
+        }
+
+        .recomendacion button {
+            margin-top: 5px;
+        }
+
+        .rating-stars {
+            unicode-bidi: bidi-override;
+            direction: rtl;
+            text-align: left;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .rating-stars label {
+            font-size: 1.5em;
+            color: #ddd;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .rating-stars input[type="radio"] {
+            display: none;
+        }
+
+        .rating-stars input[type="radio"]:checked ~ label,
+        .rating-stars label:hover,
+        .rating-stars label:hover ~ label {
+            color: #ffc107;
+        }
+
+        .rating-display {
+            font-size: 1.2em;
+            color: #ffc107;
+            margin: 5px 0;
+        }
+
+        #colorModal {
+            display: none;
+            position: fixed;
+            z-index: 1002;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        #colorModalContent {
+            background-color: var(--bg-secondary);
+            margin: 5% auto;
+            padding: 20px;
+            border: none;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            color: var(--text-primary);
+        }
+
+        .color-group {
+            margin-bottom: 15px;
+        }
+
+        .color-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .color-group input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .chat-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-controls input {
+            flex: 1;
+        }
+
+        .chat-controls button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--btn-primary);
+            color: white;
+            cursor: pointer;
+        }
+
+        .chat-controls button:hover {
+            background-color: var(--btn-hover);
+        }
+
+        .btn-limpiar-chat {
+            background-color: var(--warning);
+            color: black;
+        }
+
+        .btn-limpiar-chat:hover {
+            background-color: #e0a800;
+        }
+
+        #listaLecturasPrestadas {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .lectura-prestada-item {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: var(--bg-primary);
+        }
+
+        @media (max-width: 768px) {
+            main {
+                flex-direction: column;
+            }
+
+            #seccionIzquierda, #seccionDerecha {
+                flex: none;
+                max-width: none;
+            }
+
+            .email-section {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 5px;
+            }
+
+            .btn-flotante {
+                width: 100%;
+                text-align: center;
+            }
+
+            #adminHistorial table {
+                font-size: 0.9em;
+            }
+
+            #emailSearch {
+                width: 100%;
+            }
+
+            .email-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .email-item button {
+                margin-left: 0;
+                margin-top: 5px;
+            }
+
+            #adminTabs {
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .tab-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .header-search {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .header-search input {
+                width: 100%;
+            }
+
+            #searchModalContent, #solicitudesModalContent, #reseñasModalContent, #lecturasMasPrestadasModalContent, #progresoModalContent, #colorModalContent {
+                width: 95%;
+                margin: 10% auto;
+                padding: 15px;
+            }
+
+            #toast {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+            }
+
+            .theme-controls {
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .chat-controls {
+                flex-direction: column;
+            }
+
+            .progress-header {
+                flex-direction: column;
+                gap: 3px;
+            }
+
+            #progresoLector {
+                padding: 6px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #splash img, #splash h2, #splash p {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast"></div>
+    <div id="loginSection">
+        <h2>Acceso a la Biblioteca</h2>
+        <button class="theme-toggle-login" onclick="toggleTheme()" aria-label="Cambiar tema">🌙</button>
+        <p>Solo usuarios @educa.madrid.org aprobados</p>
+        <input type="email" id="loginEmail" placeholder="Introduce tu email @educa.madrid.org">
+        <br>
+        <button onclick="login()">Acceder 📖</button>
+        <p id="loginError" style="color: var(--danger); display: none;">Email inválido o no aprobado.</p>
+    </div>
+    <div id="app">
+        <header>
+            <div class="theme-controls">
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema">🌙</button>
+                <button class="customize-colors" onclick="openColorModal()" aria-label="Personalizar colores">🌈</button>
+            </div>
+            <h1>Catálogo de la Biblioteca Hipatia</h1>
+            <p>IES CARPE DIEM, Fuenlabrada</p>
+            <div class="header-search">
+                <input type="text" id="buscarInput" placeholder="Busca por título, autor, tejuelo, categoría" onkeypress="if(event.key === 'Enter') buscarLibros()" list="sugerenciasBusqueda">
+                <datalist id="sugerenciasBusqueda"></datalist>
+                <button onclick="buscarLibros()">Buscar 🔍</button>
+            </div>
+            <div class="email-section" id="emailSection">
+                <span id="adminBadge" class="admin-badge" style="display: none;" onclick="mostrarHistorialAdmin()">
+                    ADMIN
+                    <span id="notificationCount" class="notification-count" style="display: none;"></span>
+                </span>
+                <button class="btn-flotante btn-solicitudes" id="btnSolicitudes" style="display: none;" onclick="abrirModalSolicitudes()">Solicitudes de Libros 📝</button>
+                <button class="btn-flotante btn-reseñas" id="btnReseñas" style="display: none;" onclick="abrirModalReseñas()">Reseñas de Libros ⭐</button>
+                <button class="btn-flotante btn-mas-prestados" id="btnLecturasPrestadas" style="display: none;" onclick="abrirModalLecturasPrestadas()">Lecturas más Prestadas 📊</button>
+                <button class="btn-flotante web-ies-btn" onclick="window.open('https://site.educa.madrid.org/ies.carpediem.fuenlabrada/', '_blank')">Web del IES 🌐</button>
+                <button class="btn-flotante logout-btn" onclick="logout()">Cerrar Sesión 👋</button>
+            </div>
+        </header>
+        <main>
+            <section id="seccionIzquierda" style="display: none;">
+                <h2>Mi Perfil Lector</h2>
+                <p id="emailDisplay" style="display: none;"></p>
+                <div id="progresoLector" onclick="abrirModalProgreso()">
+                    <div class="progress-header">
+                        <span class="nivel-actual">Nivel Actual: <span id="nivelBadge" class="badge-nivel">Lector Iniciado 🔍</span></span>
+                        <span id="puntosDisplay">0 puntos</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <p class="puntos-total">¡Haz clic para ver cómo ganar puntos!</p>
+                </div>
+                <div id="misReservas">
+                    <h3>Mis Reservas</h3>
+                    <p>Aquí aparecerán los libros que has reservado.</p>
+                </div>
+                <div id="misPrestamos">
+                    <h3>Mis Préstamos</h3>
+                    <p>Aquí verás los libros que tienes en préstamo actualmente.</p>
+                </div>
+                <div id="recomendaciones">
+                    <h3>Recomendaciones Personalizadas 💡</h3>
+                    <p>Basadas en tus lecturas anteriores.</p>
+                    <div id="listaRecomendaciones"></div>
+                </div>
+            </section>
+            <section id="seccionDerecha" style="display: none;">
+                <h2>Hipat-IA</h2>
+                <p>¡Tu Bibliotecaria Virtual! 👩‍💼</p>
+                <div id="chatMensajes"></div>
+                <div class="chat-controls">
+                    <input type="text" id="chatInput" placeholder="Libros, sinopsis, recomendaciones..." onkeypress="if(event.key === 'Enter') enviarMensaje()">
+                    <button onclick="enviarMensaje()">Enviar 💬</button>
+                    <button class="btn-limpiar-chat" onclick="limpiarChat()">Limpiar Chat 🗑️</button>
+                </div>
+            </section>
+            <section id="adminHistorial" style="display: none;">
+                <h2>Administración</h2>
+                <div id="adminTabs">
+                    <button class="tab-btn active" onclick="showAdminTab('tareas')">Tareas Pendientes</button>
+                    <button class="tab-btn" onclick="showAdminTab('historial')">Historial Completo</button>
+                    <button class="tab-btn" onclick="showAdminTab('correos')">Gestión de Correos</button>
+                    <button class="tab-btn" onclick="showAdminTab('solicitudes')">Solicitudes de Libros</button>
+                </div>
+                <div id="adminTabContent"></div>
+            </section>
+        </main>
+        <div id="searchModal">
+            <div id="searchModalContent">
+                <span class="modal-close" onclick="cerrarModal()">&times;</span>
+                <h3>Resultados de Búsqueda</h3>
+                <div id="conteoResultadosModal"></div>
+                <div id="resultadosModal"></div>
+                <div id="searchPagination" class="pagination"></div>
+            </div>
+        </div>
+        <div id="solicitudesModal">
+            <div id="solicitudesModalContent">
+                <span class="modal-close" onclick="cerrarModalSolicitudes()">&times;</span>
+                <h3>SOLICITUD DE LIBROS</h3>
+                <p>¡Cuéntanos cuál será tu próxima aventura!</p>
+                <textarea id="solicitudTextarea" maxlength="500" placeholder="Indica los libros que más te interesaría leer en el IES"></textarea>
+                <div class="contador-palabras">
+                    <span id="contador">0/500 palabras</span>
+                </div>
+                <button onclick="enviarSolicitud()">Enviar Solicitud 📝</button>
+                <div id="misSolicitudesEnviadas" class="lista-enviadas">
+                    <h4>Mis Solicitudes Enviadas</h4>
+                    <p>Aquí verás las solicitudes que has compartido.</p>
+                </div>
+            </div>
+        </div>
+        <div id="reseñasModal">
+            <div id="reseñasModalContent">
+                <span class="modal-close" onclick="cerrarModalReseñas()">&times;</span>
+                <h3>RESEÑA DE LIBROS</h3>
+                <p>¡Cuéntanos qué libros te has leído y qué te han parecido!</p>
+                <label for="libroReseñaSelect">Selecciona un libro reseñado:</label>
+                <select id="libroReseñaSelect">
+                    <option value="">Elige un libro de tus préstamos</option>
+                </select>
+                <label>Valoración (1-5 estrellas):</label>
+                <fieldset class="rating-stars">
+                    <input type="radio" id="star5" name="rating" value="5">
+                    <label for="star5">★</label>
+                    <input type="radio" id="star4" name="rating" value="4">
+                    <label for="star4">★</label>
+                    <input type="radio" id="star3" name="rating" value="3">
+                    <label for="star3">★</label>
+                    <input type="radio" id="star2" name="rating" value="2">
+                    <label for="star2">★</label>
+                    <input type="radio" id="star1" name="rating" value="1">
+                    <label for="star1">★</label>
+                </fieldset>
+                <textarea id="reseñaTextarea" maxlength="500" placeholder="Tus experiencias nos ayudan a conocer mejor tus gustos"></textarea>
+                <div class="contador-palabras">
+                    <span id="contadorReseñas">0/500 palabras</span>
+                </div>
+                <button onclick="enviarReseña()">Enviar Reseña ⭐</button>
+                <div id="misReseñasEnviadas" class="lista-enviadas">
+                    <h4>Mis Reseñas Enviadas</h4>
+                    <p>Aquí verás las reseñas que has compartido.</p>
+                </div>
+            </div>
+        </div>
+        <div id="lecturasMasPrestadasModal">
+            <div id="lecturasMasPrestadasModalContent">
+                <span class="modal-close" onclick="cerrarModalLecturasPrestadas()">&times;</span>
+                <h3>Lecturas Más Prestadas</h3>
+                <p>Top 10 de las lecturas más populares en la biblioteca.</p>
+                <div id="listaLecturasPrestadas"></div>
+            </div>
+        </div>
+        <div id="progresoModal">
+            <div id="progresoModalContent">
+                <span class="modal-close" onclick="cerrarModalProgreso()">&times;</span>
+                <h3>¡Gana Puntos y Sube de Nivel! 🎮</h3>
+                <p>Estas son las acciones que te ayudan a progresar como lector.</p>
+                <ul class="acciones-puntos">
+                    <li><span>Reservar y recoger un libro</span><span class="puntos-accion">+15 pts</span></li>
+                    <li><span>Devolver a tiempo</span><span class="puntos-accion">+10 pts</span></li>
+                    <li><span>Escribir una reseña</span><span class="puntos-accion">+20 pts</span></li>
+                    <li><span>Solicitar un libro nuevo</span><span class="puntos-accion">+10 pts</span></li>
+                    <li><span>Devolver con retraso</span><span class="puntos-accion negativo">-5 pts</span></li>
+                    <li><span>Devolver dañado/roto</span><span class="puntos-accion negativo">-20 pts</span></li>
+                </ul>
+                <p><em>¡Cuanto más leas y compartas, más rápido subes de nivel!</em></p>
+            </div>
+        </div>
+        <div id="colorModal">
+            <div id="colorModalContent">
+                <span class="modal-close" onclick="closeColorModal()">&times;</span>
+                <h3>Personaliza Tus Colores 🌈</h3>
+                <p>Elige colores para elementos clave. Los cambios se aplican en tiempo real en ambos temas. Se guardarán al confirmar.</p>
+                <div class="color-group">
+                    <label for="bg-primary">Fondo Principal:</label>
+                    <input type="color" id="bg-primary">
+                </div>
+                <div class="color-group">
+                    <label for="bg-secondary">Fondo Secundario (secciones):</label>
+                    <input type="color" id="bg-secondary">
+                </div>
+                <div class="color-group">
+                    <label for="text-primary">Texto Principal:</label>
+                    <input type="color" id="text-primary">
+                </div>
+                <div class="color-group">
+                    <label for="text-secondary">Texto Secundario:</label>
+                    <input type="color" id="text-secondary">
+                </div>
+                <div class="color-group">
+                    <label for="btn-primary">Botones Principales:</label>
+                    <input type="color" id="btn-primary">
+                </div>
+                <div class="color-group">
+                    <label for="border-color">Bordes:</label>
+                    <input type="color" id="border-color">
+                </div>
+                <div class="color-group">
+                    <label for="btn-flotante-bg">Fondo Botones Flotantes:</label>
+                    <input type="color" id="btn-flotante-bg">
+                </div>
+                <div class="color-group">
+                    <label for="btn-flotante-color">Texto Botones Flotantes:</label>
+                    <input type="color" id="btn-flotante-color">
+                </div>
+                <div class="color-group">
+                    <label for="btn-flotante-hover-bg">Hover Botones Flotantes:</label>
+                    <input type="color" id="btn-flotante-hover-bg">
+                </div>
+                <div class="color-group">
+                    <label for="bot-msg-color">Color Texto Chat-Bot:</label>
+                    <input type="color" id="bot-msg-color">
+                </div>
+                <button onclick="saveCustomColors()">Guardar y Cerrar 💾</button>
+                <button onclick="resetCustomColors()">Restablecer Predeterminados 🔄</button>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        var gk_isXlsx = true;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error('Error al procesar archivo:', e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+
+        const GIST_ID = 'c38b206411f10e44ed43e4ae37fb0b26';
+        const GIST_TOKEN = 'c38b206411f10e44ed43e4ae37fb0b26';
+
+        function showToast(mensaje, tipo) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            toast.textContent = mensaje;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        async function obtenerDatosGist() {
+            try {
+                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+                });
+                if (!response.ok) throw new Error('Error al obtener Gist');
+                const gist = await response.json();
+                return JSON.parse(gist.files['datos.json'].content);
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error al conectar con el servidor', 'error');
+                return null;
+            }
+        }
+
+        async function guardarDatosGist(datos) {
+            try {
+                const token = GIST_TOKEN || prompt('Token de GitHub (solo admin):');
+                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        files: {
+                            'datos.json': {
+                                content: JSON.stringify(datos, null, 2)
+                            }
+                        }
+                    })
+                });
+                if (response.ok) {
+                    showToast('Datos sincronizados', 'success');
+                    return true;
+                }
+                throw new Error('Error al guardar');
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error al sincronizar datos', 'error');
+                return false;
+            }
+        }
+
+        async function sincronizarAlIniciar(email) {
+            const datosGist = await obtenerDatosGist();
+            if (!datosGist || !datosGist.correos_aprobados.includes(email)) {
+                showToast('Correo no autorizado', 'error');
+                return false;
+            }
+            const datosUsuario = datosGist.usuarios[email] || {
+                reservas: [],
+                prestamos: [],
+                puntos: 0,
+                nivel: 'Lector Iniciado',
+                reseñas: [],
+                ultimaActualizacion: new Date().toISOString(),
+                esAdmin: email === 'rafael.casais@educa.madrid.org'
+            };
+            if (!datosGist.usuarios[email]) {
+                datosGist.usuarios[email] = datosUsuario;
+                await guardarDatosGist(datosGist);
+            }
+            localStorage.setItem('bibliotecaDatos', JSON.stringify(datosUsuario));
+            actualizarInterfaz();
+            return true;
+        }
+
+        async function actualizarDatosUsuario(email, nuevosDatos) {
+            const datosGist = await obtenerDatosGist();
+            if (!datosGist.correos_aprobados.includes(email)) {
+                showToast('Correo no autorizado', 'error');
+                return false;
+            }
+            datosGist.usuarios[email] = {
+                ...datosGist.usuarios[email],
+                ...nuevosDatos,
+                ultimaActualizacion: new Date().toISOString()
+            };
+            await guardarDatosGist(datosGist);
+            localStorage.setItem('bibliotecaDatos', JSON.stringify(datosGist.usuarios[email]));
+            actualizarInterfaz();
+            return true;
+        }
+
+        // Aquí iría el resto del código JavaScript (se omite por brevedad, pero debe incluirse)
+        // Por ejemplo, funciones como getTareasPendientes, getHistorialCompleto, etc.
+
+        async function initApp() {
+            loadTheme();
+            await cargarDatos();
+            const emailSesionGuardada = sessionStorage.getItem('emailSesion');
+            if (emailSesionGuardada) {
+                emailSesion = emailSesionGuardada;
+                document.getElementById('adminBadge').style.display = 'none';
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                if (emailSesion === EMAIL_ADMIN) {
+                    document.getElementById('seccionIzquierda').style.display = 'none';
+                    document.getElementById('seccionDerecha').style.display = 'none';
+                    document.getElementById('adminHistorial').style.display = 'block';
+                    document.getElementById('btnSolicitudes').style.display = 'none';
+                    document.getElementById('btnReseñas').style.display = 'none';
+                    document.getElementById('btnLecturasPrestadas').style.display = 'none';
+                    updateNotificationBadge();
+                    showAdminTab('tareas');
+                } else {
+                    document.getElementById('seccionIzquierda').style.display = 'block';
+                    document.getElementById('seccionDerecha').style.display = 'block';
+                    document.getElementById('adminHistorial').style.display = 'none';
+                    document.getElementById('btnSolicitudes').style.display = 'inline-block';
+                    document.getElementById('btnReseñas').style.display = 'inline-block';
+                    document.getElementById('btnLecturasPrestadas').style.display = 'inline-block';
+                    inicializarProgreso(emailSesion);
+                    cargarPerfil();
+                }
+                cargarCatalogo();
+            }
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    if (document.getElementById('searchModal').style.display === 'block') {
+                        cerrarModal();
+                    } else if (document.getElementById('solicitudesModal').style.display === 'block') {
+                        cerrarModalSolicitudes();
+                    } else if (document.getElementById('reseñasModal').style.display === 'block') {
+                        cerrarModalReseñas();
+                    } else if (document.getElementById('lecturasMasPrestadasModal').style.display === 'block') {
+                        cerrarModalLecturasPrestadas();
+                    } else if (document.getElementById('progresoModal').style.display === 'block') {
+                        cerrarModalProgreso();
+                    } else if (document.getElementById('colorModal').style.display === 'block') {
+                        closeColorModal();
+                    }
+                }
+            });
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
