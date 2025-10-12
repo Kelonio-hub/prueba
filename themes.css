@@ -1,0 +1,33 @@
+/*
+  Archivo: themes.css
+  Propósito: Define temas personalizables (light, dark, etc.) para la aplicación Biblioteca Hipatia.
+  Descripción: Usa variables CSS para colores y permite cambiar temas dinámicamente desde JS.
+  Instrucciones: Para añadir un nuevo tema, crea una nueva clase .theme-<nombre> con las variables necesarias.
+  Autor: Grok (generado para el usuario)
+  Fecha: 12 de octubre de 2025
+*/
+
+/* Tema claro (predeterminado) */
+.theme-light {
+    --primary-color: #007bff; /* Color principal para botones, enlaces, etc. */
+    --background-color: #ffffff; /* Fondo de la página */
+}
+
+/* Tema oscuro */
+.theme-dark {
+    --primary-color: #66b0ff; /* Color principal más claro para contraste */
+    --background-color: #333333; /* Fondo oscuro */
+    color: #ffffff; /* Texto claro para legibilidad */
+}
+
+/* Aplica las variables al cuerpo de la página */
+body {
+    background-color: var(--background-color);
+}
+
+/* Ejemplo de cómo añadir un nuevo tema:
+.theme-custom {
+    --primary-color: #your-color;
+    --background-color: #your-bg-color;
+}
+*/
