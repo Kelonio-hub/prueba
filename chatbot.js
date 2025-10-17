@@ -1,17 +1,17 @@
 /**
- * Chatbot simplificado para Biblioteca Hipatia usando Groq API (100% gratuita).
+ * Chatbot para Biblioteca Hipatia usando Groq API (100% gratuita).
  * API key: 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
- * Solo integra la IA de Groq con filtros para limitaciones (no porno, no malsonantes).
- * Sugiere preguntas como reseñas, autores, sinopsis, etc., basadas en el catálogo.
- * Fallback local si la API falla.
+ * Responde desde el inicio con Groq, con filtros de contenido y sugerencias dinámicas.
+ * Fallback local si la API falla (cupo ~1M tokens/mes).
+ * Integra consultas, reseñas, autores, sinopsis y fechas con Ejemplares.xml.
  */
 
 // Configuración de Groq (100% gratis, alta cuota mensual)
 const GROQ_API_KEY = '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';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama3-8b-8192'; // Modelo gratuito, rápido y eficiente
+const MODEL = 'llama3-8b-8192'; // Modelo gratuito y rápido
 
-// Lista de palabras malsonantes y prohibidas (ampliada para filtros)
+// Lista de palabras prohibidas (malsonantes y contenido inapropiado)
 const PALABRAS_PROHIBIDAS = [
     'puta', 'joder', 'coño', 'mierda', 'follar', 'cagar', 'polla', 'tetas', 'culo', 'gilipollas',
     'cabron', 'hijoputa', 'porno', 'porn', 'sexo', 'xxx', 'nude', 'erotico', 'masturbar', 'orgasmo',
@@ -40,19 +40,32 @@ function agregarMensaje(texto, tipo = 'bot') {
 }
 
 /**
- * Llama a la API de Groq con el catálogo como contexto y sugerencias de preguntas.
+ * Llama a la API de Groq con contexto del catálogo y sugerencias de preguntas.
  * @param {string} mensajeUsuario - Mensaje del usuario.
- * @returns {Promise<string>} Respuesta de Groq o fallback.
+ * @returns {Promise<string>} Respuesta de Groq o fallback local.
  */
 async function consultarGroq(mensajeUsuario) {
+    // Cargar catálogo si no está disponible
+    if (!window.catalogo) await window.cargarCatalogo();
+
+    // Generar sugerencias dinámicas basadas en el catálogo
+    const titulos = window.catalogo?.slice(0, 3).map(libro => libro.titulo) || ['El Quijote', 'Cien años de soledad', '1984'];
+    const sugerencias = [
+        `¿Reseña de "${titulos[0]}"?`,
+        `¿Quién escribió "${titulos[1]}"?`,
+        `¿Sinopsis de "${titulos[2]}"?`,
+        `¿Cuándo se publicó "${titulos[0]}"?`
+    ].join(' ');
+
     const prompt = `
     Eres una bibliotecaria IA en la Biblioteca Hipatia, respondiendo en español con humor y emojis.
-    Catálogo de libros disponible: ${JSON.stringify(window.catalogo || 'Cargando...')}.
-    Usa el catálogo para responder sobre disponibilidad, autores, sinopsis breves, reseñas cortas o fecha de publicación.
-    Sugiere preguntas relacionadas como: "¿Quieres una reseña del libro X?", "¿Quién es el autor de Y?", "¿Una sinopsis de Z?" o "¿Cuándo se publicó W?".
-    Si el usuario pregunta por reseñas, autores o sinopsis, responde basado en conocimiento general o catálogo.
+    Catálogo de libros: ${JSON.stringify(window.catalogo || 'No disponible')}.
+    Responde a consultas sobre disponibilidad, autores, sinopsis breves, reseñas cortas o fechas de publicación.
+    Si el usuario saluda (e.g., "Hola"), responde amigablemente y sugiere preguntas.
+    Si la consulta es vaga, sugiere: ${sugerencias}.
+    Filtro: No respondas a contenido inapropiado (porno, malsonantes).
     Usuario: ${mensajeUsuario}.
-    Responde breve, útil y amigable. Si no sabes, sugiere buscar en el catálogo.
+    Respuesta breve, útil y con emojis.
     `;
 
     try {
@@ -80,26 +93,50 @@ async function consultarGroq(mensajeUsuario) {
 }
 
 /**
- * Fallback local gratuito si la API falla.
+ * Fallback local gratuito si la API de Groq falla.
  * @param {string} mensaje - Mensaje del usuario.
  * @returns {string} Respuesta simulada.
  */
 function fallbackLocal(mensaje) {
     const mensajeLower = mensaje.toLowerCase();
-    if (mensajeLower.includes('reseña') || mensajeLower.includes('sinopsis') || mensajeLower.includes('autor') || mensajeLower.includes('publicado')) {
-        const termino = mensajeLower.match(/(reseña|sinopsis|autor|publicado)\s+(de\s+)?el\s+libro\s+(.+?)(?:\?|$)/)?.[3] || '';
+    const titulos = window.catalogo?.slice(0, 3).map(libro => libro.titulo) || ['El Quijote', 'Cien años de soledad', '1984'];
+    const sugerencias = `Prueba: "¿Reseña de ${titulos[0]}?" o "¿Quién escribió ${titulos[1]}?" 😊`;
+
+    if (mensajeLower.includes('hola') || mensajeLower.trim() === '') {
+        return `¡Hola! Bienvenido a la Biblioteca Hipatia. ¿En qué te ayudo? ${sugerencias}`;
+    }
+    if (mensajeLower.includes('reseña') || mensajeLower.includes('sinopsis')) {
+        const termino = mensajeLower.match(/(reseña|sinopsis)\s+(de\s+)?el\s+libro\s+(.+?)(?:\?|$)/)?.[3] || '';
         const resultados = window.catalogo?.filter(libro =>
             libro.titulo.toLowerCase().includes(termino) || libro.autor.toLowerCase().includes(termino)
         ) || [];
         if (resultados.length > 0) {
             const libro = resultados[0];
-            let respuesta = `Sobre "${libro.titulo}" de ${libro.autor} (Categoría: ${libro.categoria}, Publicado: ${libro.fechaEdicion}). `;
-            if (mensajeLower.includes('reseña') || mensajeLower.includes('sinopsis')) {
-                respuesta += 'Sinopsis breve: Una historia fascinante sobre [tema genérico basado en categoría]. ¡Léelo! 📖';
-            }
-            return respuesta + ' Sugerencia: "¿Quieres el autor de otro libro?" 😊';
+            return `Sobre "${libro.titulo}": Una obra fascinante de ${libro.autor} (${libro.categoria}). Sinopsis: [Historia genérica basada en categoría]. ${sugerencias}`;
         }
-        return 'No encontré el libro. Sugerencia: "¿Reseña de "El Quijote"?" 📚';
+        return `No encontré el libro. ${sugerencias}`;
+    }
+    if (mensajeLower.includes('autor') || mensajeLower.includes('escritor')) {
+        const termino = mensajeLower.match(/(autor|escritor)\s+(de\s+)?el\s+libro\s+(.+?)(?:\?|$)/)?.[3] || '';
+        const resultados = window.catalogo?.filter(libro =>
+            libro.titulo.toLowerCase().includes(termino)
+        ) || [];
+        if (resultados.length > 0) {
+            const libro = resultados[0];
+            return `El autor de "${libro.titulo}" es ${libro.autor}. ${sugerencias}`;
+        }
+        return `No encontré el libro. ${sugerencias}`;
+    }
+    if (mensajeLower.includes('publicado') || mensajeLower.includes('publicación')) {
+        const termino = mensajeLower.match(/(publicado|publicación)\s+(de\s+)?el\s+libro\s+(.+?)(?:\?|$)/)?.[3] || '';
+        const resultados = window.catalogo?.filter(libro =>
+            libro.titulo.toLowerCase().includes(termino)
+        ) || [];
+        if (resultados.length > 0) {
+            const libro = resultados[0];
+            return `"${libro.titulo}" fue publicado en ${libro.fechaEdicion}. ${sugerencias}`;
+        }
+        return `No encontré el libro. ${sugerencias}`;
     }
     if (mensajeLower.includes('tienes') || mensajeLower.includes('disponible')) {
         const termino = mensajeLower.match(/(libro|de)\s+(.+?)(?:\?|$)/)?.[2] || '';
@@ -108,11 +145,11 @@ function fallbackLocal(mensaje) {
         ) || [];
         if (resultados.length > 0) {
             const libro = resultados[0];
-            return `Sí, tenemos "${libro.titulo}" de ${libro.autor}. Disponibles: ${libro.copiasDisponibles}. Sugerencia: "¿Reseña de este libro?" 😊`;
+            return `Sí, tenemos "${libro.titulo}" de ${libro.autor}. Disponibles: ${libro.copiasDisponibles}. ${sugerencias}`;
         }
-        return 'No lo encontramos. Sugerencia: "¿Autor de "Cien años de soledad"?" 🔍';
+        return `No lo encontramos. ${sugerencias}`;
     }
-    return 'Modo local: Prueba "¿Tienes el libro X?" o "¿Reseña de Y?". 📚';
+    return `No entendí, pero estoy aquí para ayudar. ${sugerencias}`;
 }
 
 /**
@@ -122,24 +159,22 @@ async function enviarMensaje() {
     const input = document.getElementById('chatInput');
     const mensaje = input.value.trim();
     if (!mensaje) return;
-    
+
     // Filtro de palabras prohibidas
     const mensajeLower = mensaje.toLowerCase();
     const contieneProhibida = PALABRAS_PROHIBIDAS.some(palabra => mensajeLower.includes(palabra));
     if (contieneProhibida) {
         agregarMensaje(mensaje, 'user');
-        agregarMensaje('Lo siento, no puedo responder a consultas con lenguaje inapropiado o contenido prohibido. Prueba otra pregunta. 😊 Sugerencia: "¿Reseña de un libro clásico?"', 'incorrecto');
+        agregarMensaje('Lo siento, no puedo responder a consultas con lenguaje inapropiado. Prueba: "¿Reseña de "El Quijote"?" 😊', 'incorrecto');
         input.value = '';
         input.focus();
         return;
     }
-    
+
     agregarMensaje(mensaje, 'user');
     input.value = '';
     input.disabled = true;
     input.placeholder = 'Pensando...';
-
-    if (!window.catalogo) await window.cargarCatalogo();
 
     const respuesta = await consultarGroq(mensaje);
     agregarMensaje(respuesta, 'bot');
@@ -150,14 +185,21 @@ async function enviarMensaje() {
 }
 
 /**
- * Inicializa el chatbot al cargar la página.
+ * Estilos para respuestas incorrectas (usando CSS de index.html).
  */
-document.addEventListener('DOMContentLoaded', () => {
+function agregarEstilosRespuesta() {
     const style = document.createElement('style');
     style.textContent = `
         .mensaje.incorrecto { background-color: var(--btn-solicitud); color: black; padding: 10px; border-radius: 4px; }
     `;
     document.head.appendChild(style);
-    agregarMensaje('¡Hola! Soy la IA de la Biblioteca Hipatia. Pregunta sobre libros, reseñas, autores o sinopsis. Ejemplo: "¿Reseña de "El Quijote"?" 😊', 'bot');
+}
+
+/**
+ * Inicializa el chatbot al cargar la página.
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    agregarEstilosRespuesta();
+    agregarMensaje('¡Hola! Soy la IA de la Biblioteca Hipatia (gratis con Groq). Pregunta sobre libros, reseñas, autores o sinopsis. Ejemplo: "¿Reseña de "El Quijote"?" 😊', 'bot');
     document.getElementById('chatInput').focus();
 });
