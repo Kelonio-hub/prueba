@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IES CARPE DIEM - Biblioteca Hipatia</title>
+    <link rel="icon" href="https://site.educa.madrid.org/ies.carpediem.fuenlabrada//wp-content/uploads/ies.carpediem.fuenlabrada/2023/03/logo-carpe-diem-cuadrado-500x500-blanco-100x100.png" sizes="32x32" />
+    <link rel="icon" href="https://site.educa.madrid.org/ies.carpediem.fuenlabrada//wp-content/uploads/ies.carpediem.fuenlabrada/2023/03/logo-carpe-diem-cuadrado-500x500-blanco-300x300.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="https://site.educa.madrid.org/ies.carpediem.fuenlabrada//wp-content/uploads/ies.carpediem.fuenlabrada/2023/03/logo-carpe-diem-cuadrado-500x500-blanco-300x300.png" />
+    <meta name="msapplication-TileImage" content="https://site.educa.madrid.org/ies.carpediem.fuenlabrada//wp-content/uploads/ies.carpediem.fuenlabrada/2023/03/logo-carpe-diem-cuadrado-500x500-blanco-300x300.png" />
+    <link rel="preload" href="./Ejemplares.xml" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="https://raw.githubusercontent.com/Kelonio-hub/prueba/main/logo%20biblioteca.png" as="image">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.10/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.18/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #f4f4f4;
+            --bg-secondary: white;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --btn-primary: #3399ff; /* Botón principal (búsqueda) */
+            --btn-primary-hover: #1a73e8;
+            --btn-secondary: #2a2a2a; /* Unifica reserva y solicitud */
+            --btn-secondary-hover: #1e1e1e;
+            --btn-proseguir: #17a2b8; /* Botón de proseguir */
+            --btn-proseguir-hover: #138496;
+            --shadow: 0 2px 5px rgba(0,0,0,0.1);
+            --chat-bg: #f9f9f9;
+            --msg-bg: #c9c9c9; /* Unifica user-msg-bg y bot-msg-bg */
+            --bot-msg-color: #000000;
+            --splash-bg: linear-gradient(135deg, rgb(255, 255, 255) 0%, #c8c8c8 50%, #ffffff 100%);
+            --splash-text: rgb(0, 0, 0);
+            --splash-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #ffffff;
+            --border-color: #444;
+            --btn-primary: #3399ff;
+            --btn-primary-hover: #1a73e8;
+            --btn-secondary: #2a2a2a;
+            --btn-secondary-hover: #1e1e1e;
+            --btn-proseguir: #17a2b8;
+            --btn-proseguir-hover: #138496;
+            --shadow: 0 2px 5px rgba(0,0,0,0.3);
+            --chat-bg: #374151;
+            --msg-bg: #3a3a3a;
+            --bot-msg-color: #e0e0e0;
+            --splash-bg: linear-gradient(135deg, #374151 0%, #374151 50%, #374151 100%);
+            --splash-text: rgb(255, 255, 255);
+            --splash-shadow: 2px 2px 4px rgba(255, 255, 255, 0.2);
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--splash-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+            color: var(--splash-text);
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            overflow: hidden;
+            text-shadow: var(--splash-shadow);
+        }
+
+        #splash.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .splash-container {
+            animation: fadeInContainer 1.5s ease-out;
+        }
+
+        #splash img {
+            max-width: 250px;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            animation: bounceIn 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.5s both;
+            transition: transform 0.3s ease;
+        }
+
+        #splash img:hover {
+            transform: scale(1.05);
+        }
+
+        #splash h2 {
+            font-size: 2.8rem;
+            margin: 15px 0;
+            font-weight: bold;
+            animation: fadeInUp 0.8s ease-out 1s both;
+            letter-spacing: 1px;
+        }
+
+        #splash p {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.8s ease-out 1.2s both;
+        }
+
+        @keyframes fadeInContainer {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #app {
+            display: none;
+        }
+
+        header {
+            text-align: center;
+            background-image: url('https://site.educa.madrid.org/ies.carpediem.fuenlabrada//wp-content/uploads/ies.carpediem.fuenlabrada/2024/03/carpediem-foto-inicio1920x1200c.jpg');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .theme-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .theme-toggle {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        [data-theme="dark"] .theme-toggle {
+            background: rgba(0,0,0,0.2);
+        }
+
+        [data-theme="dark"] .theme-toggle:hover {
+            background: rgba(0,0,0,0.3);
+        }
+
+        .header-search {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header-search input {
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            width: 250px;
+            max-width: 100%;
+            background: rgba(255,255,255,0.9);
+        }
+
+        .header-search button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .header-search .buscar-btn {
+            background-color: var(--btn-primary);
+        }
+
+        .header-search .buscar-btn:hover {
+            background-color: var(--btn-primary-hover);
+        }
+
+        .header-search .action-btn {
+            background-color: var(--btn-secondary);
+        }
+
+        .header-search .action-btn:hover {
+            background-color: var(--btn-secondary-hover);
+        }
+
+        main {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        section {
+            flex: 1;
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        #seccionDerecha {
+            flex: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        #chatMensajes {
+            height: 200px;
+            overflow-y: scroll;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            margin: 10px 0;
+            background-color: var(--chat-bg);
+            color: var(--text-primary);
+        }
+
+        .mensaje {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: var(--msg-bg);
+            color: var(--text-primary);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .mensaje.user {
+            text-align: right;
+        }
+
+        .mensaje.bot {
+            color: var(--bot-msg-color);
+        }
+
+        .mensaje.temporal {
+            font-style: italic;
+            color: #888;
+            opacity: 0.7;
+        }
+
+        .proseguir-btn {
+            background-color: var(--btn-proseguir);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 5px;
+            margin-right: 5px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        .proseguir-btn:hover {
+            background-color: var(--btn-proseguir-hover);
+        }
+
+        .buscar-libro-btn {
+            background-color: var(--btn-primary);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 5px;
+            margin-right: 5px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        .buscar-libro-btn:hover {
+            background-color: var(--btn-primary-hover);
+        }
+
+        .action-btn {
+            background-color: var(--btn-secondary);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 5px;
+            margin-right: 5px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        .action-btn:hover {
+            background-color: var(--btn-secondary-hover);
+        }
+
+        .chat-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-controls input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .chat-controls input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .chat-controls button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--btn-primary);
+            color: white;
+            cursor: pointer;
+        }
+
+        .chat-controls button:hover {
+            background-color: var(--btn-primary-hover);
+        }
+
+        #searchModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        #searchModalContent {
+            background-color: var(--bg-secondary);
+            margin: 5% auto;
+            padding: 20px;
+            border: none;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            color: var(--text-primary);
+            box-sizing: border-box;
+        }
+
+        #searchModalContent h3 {
+            margin-top: 0;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            color: var(--text-secondary);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-search {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-search input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .modal-search button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--btn-primary);
+            color: white;
+            cursor: pointer;
+        }
+
+        .modal-search button:hover {
+            background-color: var(--btn-primary-hover);
+        }
+
+        .libro-modal {
+            border: 1px solid var(--border-color);
+            padding: 0;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            overflow: hidden;
+        }
+
+        .contenido-modal {
+            padding: 15px;
+            line-height: 1.6;
+        }
+
+        .contenido-modal p {
+            margin: 8px 0;
+        }
+
+        .tejuelo {
+            font-family: monospace;
+            padding: 2px 4px;
+            border-radius: 2px;
+            color: black;
+        }
+
+        .pagination {
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .pagination button {
+            background-color: var(--btn-primary);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .pagination button:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            font-weight: bold;
+        }
+
+        #conteoResultadosModal {
+            font-weight: bold;
+            color: var(--btn-primary);
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #e9f5ff;
+            border-radius: 4px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: var(--shadow);
+            z-index: 10000;
+            min-width: 300px;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        .toast.warning {
+            background: #ffc107;
+            color: black;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                flex-direction: column;
+            }
+            #seccionDerecha {
+                flex: none;
+                max-width: none;
+            }
+            #splash h2 { font-size: 2rem; }
+            #splash p { font-size: 1.1rem; }
+            #splash img { max-width: 180px; }
+            .header-search {
+                flex-direction: column;
+                align-items: center;
+            }
+            .header-search input,
+            .header-search button {
+                width: 100%;
+                max-width: 300px;
+            }
+            #searchModalContent {
+                width: 95%;
+                margin: 10% auto;
+                padding: 15px;
+            }
+            .toast {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+            }
+            .theme-controls {
+                flex-direction: column;
+                gap: 2px;
+            }
+            .chat-controls {
+                flex-direction: column;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #splash img, #splash h2, #splash p {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="splash" tabindex="0">
+        <div class="splash-container">
+            <img src="https://raw.githubusercontent.com/Kelonio-hub/prueba/main/logo%20biblioteca.png"
+                 alt="Logo de la Biblioteca Hipatia"
+                 loading="lazy"
+                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvZ28gTm8gQ2FycmVnYWRvPC90ZXh0Pjwvc3ZnPg=='">
+            <h2>¡Bienvenidos a la Biblioteca Hipatia!</h2>
+            <p>Cargando el catálogo de libros y aventuras...</p>
+        </div>
+    </div>
+    <div id="app">
+        <header>
+            <div class="theme-controls">
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Cambiar entre tema claro y oscuro">🌙</button>
+            </div>
+            <h1>Biblioteca Hipatia - <a href="https://site.educa.madrid.org/ies.carpediem.fuenlabrada/" target="_blank" style="color:white;"> IES CARPE DIEM </a></h1>
+            <div class="header-search">
+                <input type="text" id="buscarInput" placeholder="Busca por título, autor, tejuelo, categoría" 
+                       aria-label="Buscar libros por título, autor, tejuelo o categoría" 
+                       aria-describedby="search-instruction" 
+                       onkeypress="if(event.key === 'Enter') realizarBusqueda(this)" 
+                       list="sugerenciasBusqueda">                
+                <datalist id="sugerenciasBusqueda"></datalist>
+                <button class="buscar-btn" onclick="realizarBusqueda(document.getElementById('buscarInput'))">Buscar 🔍</button>
+                <button class="action-btn" data-action="reserva" onclick="abrirEnlace('reserva')" 
+                        aria-label="Abrir formulario de reserva de libros">Reserva de Libros 📚</button>
+                <button class="action-btn" data-action="solicitud" onclick="abrirEnlace('solicitud')" 
+                        aria-label="Abrir formulario de solicitud de libros nuevos">Solicitud de Libros Nuevos 🔖</button>
+            </div>
+            <p id="search-instruction" class="visually-hidden">Busca libros por título, autor, tejuelo o categoría en la barra de búsqueda.</p>
+        </header>
+        <main>
+            <section id="seccionDerecha">
+                <h2>Hipat-IA</h2>
+                <p>¡Tu Bibliotecaria Virtual! 👩‍💼</p>
+                <div id="chatMensajes" role="log" aria-live="polite"></div>
+                <div class="chat-controls">
+                    <input type="text" id="chatInput" placeholder="Libros, sinopsis, recomendaciones..." 
+                           aria-label="Enviar mensaje a la bibliotecaria virtual" 
+                           aria-describedby="chat-instruction" 
+                           onkeypress="if(event.key === 'Enter') enviarMensaje()">                    
+                    <button onclick="enviarMensaje()">Enviar 💬</button>
+                </div>
+                <p id="chat-instruction" class="visually-hidden">Envía un mensaje a la bibliotecaria virtual para obtener ayuda con libros o recomendaciones.</p>
+            </section>
+        </main>
+        <div id="searchModal" tabindex="0">
+            <div id="searchModalContent">
+                <span class="modal-close" role="button" aria-label="Cerrar ventana de resultados de búsqueda" onclick="cerrarModal()">&times;</span>
+                <h3>Resultados de Búsqueda</h3>
+                <div class="modal-search">
+                    <input type="text" id="modalSearchInput" placeholder="Busca por título, autor, tejuelo, categoría" 
+                           aria-label="Buscar libros en el modal por título, autor, tejuelo o categoría" 
+                           onkeypress="if(event.key === 'Enter') realizarBusqueda(this)">
+                    <button onclick="realizarBusqueda(document.getElementById('modalSearchInput'))">Buscar 🔍</button>
+                </div>
+                <div id="conteoResultadosModal"></div>
+                <div id="resultadosModal"></div>
+                <div id="searchPagination" class="pagination"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let catalogo = [];
+        let searchResults = [];
+        let searchQuery = '';
+        let currentPageSearch = 1;
+        let toastCount = 0;
+        let respuestasPendientes = {};
+        let mensajeActualId = 0;
+        let historialMensajes = [];
+        let cacheRespuestas = JSON.parse(localStorage.getItem('hipatia_cache')) || {};
+
+        const API_KEY = 'AIzaSyCls5FtXaTdzQfM5FarqmHSALeGmnIPcAg';
+        const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/';
+        const MODELOS_A_PROBAR = [
+            'gemini-2.5-flash',
+            'gemini-2.5-pro',
+            'gemini-2.0-flash',
+            'gemini-1.5-flash-latest',
+            'gemini-1.5-pro-latest'
+        ];
+        let MODELO_FUNCIONAL = localStorage.getItem('gemini_modelo_funcional') || null;
+
+        const CATEGORIAS = {
+            narrativa: { nombre: 'Narrativa', color: '#1bd47a', signatura: 'N' },
+            poesia: { nombre: 'Poesía', color: '#ff48a9', signatura: 'P' },
+            teatro: { nombre: 'Teatro', color: '#e350de', signatura: 'T' },
+            literatura_inglesa: { nombre: 'Literatura inglesa', color: '#d4d700', signatura: 'LI' },
+            enciclopedias: { nombre: 'Enciclopedias', color: '#ffaa00', signatura: 'E' },
+            comic: { nombre: 'Cómic', color: '#33c5ff', signatura: 'C' },
+            deportes: { nombre: 'Deportes', color: '#ff0000', signatura: 'D' },
+            default: { nombre: 'No disponible', color: '#cccccc', signatura: '' }
+        };
+
+        function sanitizeHTML(str) {
+            return DOMPurify.sanitize(str);
+        }
+
+        function sanitizeInput(str) {
+            return DOMPurify.sanitize(str);
+        }
+
+        function showToast(message, type = 'success') {
+            const toastContainer = document.createElement('div');
+            toastContainer.className = `toast ${type}`;
+            toastContainer.style.position = 'fixed';
+            toastContainer.style.bottom = `${20 + (toastCount * 60)}px`;
+            toastContainer.style.right = '20px';
+            toastContainer.style.padding = '15px';
+            toastContainer.style.borderRadius = '4px';
+            toastContainer.style.boxShadow = 'var(--shadow)';
+            toastContainer.style.zIndex = 10000 + toastCount;
+            toastContainer.style.minWidth = '300px';
+            toastContainer.style.animation = 'slideInRight 0.3s ease-out';
+            toastContainer.textContent = message;
+            document.body.appendChild(toastContainer);
+            toastCount++;
+            setTimeout(() => {
+                toastContainer.remove();
+                toastCount--;
+            }, 3000);
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.body.setAttribute('data-theme', savedTheme);
+        }
+
+        function cerrarModal() {
+            document.getElementById('searchModal').style.display = 'none';
+            document.getElementById('buscarInput').focus();
+            document.getElementById('modalSearchInput').value = '';
+        }
+
+        function generarEstilosTejuelos() {
+            const style = document.createElement('style');
+            let css = '';
+            for (const [key, { color }] of Object.entries(CATEGORIAS)) {
+                css += `.tejuelo[data-categoria="${key}"] { background-color: ${color}; }\n`;
+            }
+            style.textContent = css;
+            document.head.appendChild(style);
+        }
+
+        async function cargarCatalogo() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const cacheVersion = 'catalog-v1';
+                const cachedCatalogo = localStorage.getItem('catalogo');
+                const cachedVersion = localStorage.getItem('catalogoVersion');
+                if (cachedCatalogo && cachedVersion === cacheVersion) {
+                    catalogo = JSON.parse(cachedCatalogo);
+                    actualizarSugerenciasBusqueda();
+                    return;
+                }
+                const response = await fetch('./Ejemplares.xml', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+                    throw new Error('Error al parsear XML.');
+                }
+                const libros = {};
+                Array.from(xmlDoc.getElementsByTagName('Libro')).forEach(libro => {
+                    const idDocumento = libro.getAttribute('id_documento') || '';
+                    const descriptor = libro.getElementsByTagName('Descriptor')[0];
+                    const rawCategoria = descriptor ? descriptor.textContent.toLowerCase() : 'default';
+                    const categoriaKey = rawCategoria in CATEGORIAS ? rawCategoria : 'default';
+                    libros[idDocumento] = {
+                        titulo: libro.getElementsByTagName('Titulo')[0]?.textContent || 'Sin título',
+                        autor: libro.getElementsByTagName('Autor')[0]?.textContent || 'Desconocido',
+                        categoria: CATEGORIAS[categoriaKey].nombre,
+                        fechaEdicion: libro.getElementsByTagName('FechaEdicion')[0]?.textContent || 'No disponible'
+                    };
+                });
+                const librosAgrupados = {};
+                Array.from(xmlDoc.getElementsByTagName('Ejemplar')).forEach(ejemplar => {
+                    const idRegistro = ejemplar.getAttribute('IdRegistro') || '';
+                    const libro = libros[idRegistro] || {};
+                    const signatura1 = CATEGORIAS[libro.categoria.toLowerCase()]?.signatura || ejemplar.getAttribute('Signatura1') || '';
+                    const signatura = `${signatura1}-${ejemplar.getAttribute('Signatura2') || ''}-${ejemplar.getAttribute('Signatura3') || ''}`.trim();
+                    if (!librosAgrupados[idRegistro]) {
+                        librosAgrupados[idRegistro] = {
+                            titulo: libro.titulo || 'Sin título',
+                            autor: libro.autor || 'Desconocido',
+                            categoria: libro.categoria || 'No disponible',
+                            fechaEdicion: libro.fechaEdicion || 'No disponible',
+                            signatura: signatura || 'No disponible',
+                            isbn: ejemplar.getAttribute('ISBN') || 'No disponible',
+                            fecha: ejemplar.getAttribute('Fecha') || 'No disponible',
+                            copiasTotales: 0,
+                            copiasDisponibles: 0,
+                            idRegistro: idRegistro
+                        };
+                    }
+                    librosAgrupados[idRegistro].copiasTotales += 1;
+                    if (ejemplar.getAttribute('Estado') === '0') {
+                        librosAgrupados[idRegistro].copiasDisponibles += 1;
+                    }
+                });
+                catalogo = Object.values(librosAgrupados);
+                localStorage.setItem('catalogo', JSON.stringify(catalogo));
+                localStorage.setItem('catalogoVersion', cacheVersion);
+                actualizarSugerenciasBusqueda();
+            } catch (error) {
+                console.error('Error al cargar:', error);
+                catalogo = [];
+                showToast('Catálogo en Mantenimiento, discupe las molestias.', 'error');
+            }
+        }
+
+        function actualizarSugerenciasBusqueda() {
+            const datalist = document.getElementById('sugerenciasBusqueda');
+            datalist.innerHTML = catalogo.map(libro => `
+                <option value="${libro.titulo}">${libro.autor} - ${libro.categoria} (${libro.copiasDisponibles} disponibles)</option>
+            `).join('');
+        }
+
+        function normalizarTexto(texto) {
+            if (!texto) return '';
+            const acentos = {
+                'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
+                'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U'
+            };
+            return texto
+                .replace(/[áéíóúÁÉÍÓÚ]/g, match => acentos[match] || match)
+                .toLowerCase()
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function buscarLibros(query, exactMatch = false) {
+            if (!catalogo.length || !query) {
+                return [];
+            }
+            const lowerQuery = normalizarTexto(query);
+            if (exactMatch) {
+                return catalogo.filter(libro => normalizarTexto(libro.titulo) === lowerQuery);
+            }
+            return catalogo
+                .filter(libro =>
+                    normalizarTexto(libro.titulo).includes(lowerQuery) ||
+                    normalizarTexto(libro.autor).includes(lowerQuery) ||
+                    normalizarTexto(libro.categoria).includes(lowerQuery) ||
+                    normalizarTexto(libro.signatura).includes(lowerQuery) ||
+                    normalizarTexto(libro.isbn).includes(lowerQuery)
+                )
+                .sort((a, b) => b.copiasDisponibles - a.copiasDisponibles);
+        }
+
+        function realizarBusqueda(inputElement) {
+            if (!catalogo.length) {
+                showToast('Catálogo en Mantenimiento, discupe las molestias.', 'warning');
+                return;
+            }
+            const query = inputElement.value.trim();
+            if (!query) {
+                showToast('Por favor, introduce un término de búsqueda.', 'warning');
+                return;
+            }
+            searchQuery = query;
+            searchResults = buscarLibros(query);
+            currentPageSearch = 1;
+            abrirModal();
+            mostrarResultadosModal();
+        }
+
+        function abrirModal() {
+            const modal = document.getElementById('searchModal');
+            const modalSearchInput = document.getElementById('modalSearchInput');
+            modalSearchInput.value = searchQuery;
+            modal.style.display = 'block';
+            modalSearchInput.focus();
+        }
+
+        function mostrarResultadosModal() {
+            const pageSize = 5;
+            const totalPages = Math.ceil(searchResults.length / pageSize);
+            const start = (currentPageSearch - 1) * pageSize;
+            const end = start + pageSize;
+            const paginatedResults = searchResults.slice(start, end);
+            const conteoDiv = document.getElementById('conteoResultadosModal');
+            const resultadosDiv = document.getElementById('resultadosModal');
+            const paginationDiv = document.getElementById('searchPagination');
+            const textoConteo = searchResults.length > 0
+                ? `${searchResults.length} resultados para "${sanitizeHTML(searchQuery)}". El color del Tejuelo indica su estantería`
+                : `No se encontraron resultados para "${sanitizeHTML(searchQuery)}".`;
+            conteoDiv.innerHTML = `<p>${textoConteo}</p>`;
+            resultadosDiv.innerHTML = paginatedResults.map(libro => `
+                <div class="libro-modal" role="region" aria-label="Resultado de búsqueda para ${libro.titulo}">
+                    <div class="contenido-modal">
+                        <p><strong>Título:</strong> ${libro.titulo}</p>
+                        <p><strong>Autor:</strong> ${libro.autor}</p>
+                        <p><strong>Categoría:</strong> ${libro.categoria}</p>
+                        <p><strong>Tejuelo:</strong> <span class="tejuelo" data-categoria="${libro.categoria.toLowerCase()}">${libro.signatura}</span></p>
+                        <p><strong>Ejemplares Disponibles en Hipatia:</strong> ${libro.copiasDisponibles}</p>
+                    </div>
+                </div>
+            `).join('') || '<p>No se encontraron libros en esta página.</p>';
+            const paginationHtml = `
+                <button ${currentPageSearch === 1 ? 'disabled' : ''} onclick="changePageSearch(${currentPageSearch - 1})" aria-label="Página anterior">&lt;</button>
+                ${Array.from({ length: totalPages }, (_, i) => `
+                    <button ${currentPageSearch === i + 1 ? 'disabled' : ''} onclick="changePageSearch(${i + 1})" aria-label="Ir a página ${i + 1}">${i + 1}</button>
+                `).join('')}
+                <button ${currentPageSearch === totalPages ? 'disabled' : ''} onclick="changePageSearch(${currentPageSearch + 1})" aria-label="Página siguiente">&gt;</button>
+            `;
+            paginationDiv.innerHTML = paginationHtml;
+        }
+
+        function changePageSearch(newPage) {
+            currentPageSearch = newPage;
+            mostrarResultadosModal();
+        }
+
+        async function probarModelo(modelo, contents) {
+            try {
+                const response = await fetch(`${BASE_URL}${modelo}:generateContent?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents })
+                });
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+                if (data.candidates && data.candidates.length > 0) {
+                    const contenido = data.candidates[0].content;
+                    if (contenido && contenido.parts && contenido.parts.length > 0) {
+                        localStorage.setItem('gemini_modelo_funcional', modelo);
+                        MODELO_FUNCIONAL = modelo;
+                        return contenido.parts.map(part => part.text).join(' ');
+                    }
+                }
+                return null;
+            } catch (error) {
+                console.error(`Error con el modelo ${modelo}:`, error);
+                return null;
+            }
+        }
+
+        function extraerLibroDeConsulta(query) {
+            const lowerQuery = normalizarTexto(query);
+            const match = lowerQuery.match(/(?:de|sobre)\s+(.+)$/i);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+            return lowerQuery.replace(/(cuantos|ejemplares|copias|disponibles|libros)/gi, '').trim();
+        }
+
+        function abrirBuscadorLibro(libro) {
+            searchQuery = libro;
+            searchResults = buscarLibros(libro);
+            currentPageSearch = 1;
+            abrirModal();
+            mostrarResultadosModal();
+        }
+
+        function dividirTexto(texto, tipo) {
+            const maxLength = 500;
+            const partes = [];
+            let parteActual = '';
+            let contadorPalabras = 0;
+            const palabras = texto.split(' ');
+
+            for (const palabra of palabras) {
+                if (contadorPalabras + palabra.length > maxLength) {
+                    partes.push({ tipo, texto: parteActual.trim() });
+                    parteActual = palabra + ' ';
+                    contadorPalabras = palabra.length + 1;
+                } else {
+                    parteActual += palabra + ' ';
+                    contadorPalabras += palabra.length + 1;
+                }
+            }
+            if (parteActual.trim()) {
+                partes.push({ tipo, texto: parteActual.trim() });
+            }
+            return partes.length > 0 ? partes : [{ tipo, texto }];
+        }
+
+        function crearBotonAccion(tipo, texto, ariaLabel) {
+            const boton = document.createElement('button');
+            boton.className = 'action-btn';
+            boton.setAttribute('data-action', tipo);
+            boton.textContent = texto;
+            boton.setAttribute('aria-label', ariaLabel);
+            boton.onclick = () => abrirEnlace(tipo);
+            return boton;
+        }
+
+        function abrirEnlace(tipo) {
+            const enlaces = {
+                reserva: 'ENLACE_POR_DETERMINAR_RESERVA',
+                solicitud: 'ENLACE_POR_DETERMINAR_SOLICITUD'
+            };
+            window.open(enlaces[tipo] || 'ENLACE_POR_DETERMINAR', '_blank');
+        }
+
+        function mostrarSiguienteParte(mensajeId, parteActual) {
+            const partes = respuestasPendientes[mensajeId];
+            if (partes && parteActual <= partes.length) {
+                const libroBuscado = partes[0].libroBuscado || null;
+                const mostrarReservaBtn = partes[0].texto.includes('[RESERVA]');
+                const mostrarSolicitudBtn = partes[0].texto.includes('[SOLICITUD]');
+                agregarMensaje('', false, false, partes, mensajeId, parteActual, partes.length, libroBuscado, mostrarReservaBtn, mostrarSolicitudBtn);
+            }
+        }
+
+        function agregarMensaje(texto, esUsuario = false, esTemporal = false, partes = null, mensajeId = null, parteActual = 1, totalPartes = 1, libroBuscado = null, mostrarReservaBtn = false, mostrarSolicitudBtn = false) {
+            if (chatMensajes.children.length > 50) {
+                chatMensajes.removeChild(chatMensajes.firstChild);
+            }
+            const mensajeDiv = document.createElement('div');
+            mensajeDiv.className = `mensaje ${esUsuario ? 'user' : 'bot'}${esTemporal ? ' temporal' : ''}`;
+            let mensajeTexto = esUsuario ? texto : texto;
+            if (!esUsuario && !esTemporal && partes) {
+                mensajeTexto = `**${partes[parteActual - 1].tipo.charAt(0).toUpperCase() + partes[parteActual - 1].tipo.slice(1)} (Parte ${parteActual}/${totalPartes})**:\n${partes[parteActual - 1].texto}`;
+            }
+            mensajeDiv.innerHTML = esUsuario ? sanitizeHTML(mensajeTexto) : marked.parse(sanitizeHTML(mensajeTexto));
+            if (!esUsuario && !esTemporal) {
+                if (partes && parteActual < totalPartes) {
+                    const proseguirBtn = document.createElement('button');
+                    proseguirBtn.className = 'proseguir-btn';
+                    proseguirBtn.textContent = 'Proseguir respuesta';
+                    proseguirBtn.setAttribute('aria-label', `Mostrar la parte ${parteActual + 1} de ${totalPartes} de la respuesta`);
+                    proseguirBtn.onclick = () => mostrarSiguienteParte(mensajeId, parteActual + 1);
+                    mensajeDiv.appendChild(proseguirBtn);
+                }
+                if (libroBuscado) {
+                    const buscarBtn = document.createElement('button');
+                    buscarBtn.className = 'buscar-libro-btn';
+                    buscarBtn.textContent = 'Abrir Catálogo 🔍';
+                    buscarBtn.setAttribute('aria-label', `Abrir ventana de búsqueda con resultados para ${libroBuscado}`);
+                    buscarBtn.onclick = () => abrirBuscadorLibro(libroBuscado);
+                    mensajeDiv.appendChild(buscarBtn);
+                }
+                if (mostrarReservaBtn) {
+                    mensajeDiv.appendChild(crearBotonAccion('reserva', 'Reserva de Libros 📚', 'Abrir formulario de reserva de libros'));
+                }
+                if (mostrarSolicitudBtn) {
+                    mensajeDiv.appendChild(crearBotonAccion('solicitud', 'Solicitud de Libros Nuevos 🔖', 'Abrir formulario de solicitud de libros nuevos'));
+                }
+            }
+            chatMensajes.appendChild(mensajeDiv);
+            chatMensajes.scrollTop = chatMensajes.scrollHeight;
+            if (!esTemporal) {
+                historialMensajes.push({ role: esUsuario ? 'user' : 'assistant', content: texto });
+                if (historialMensajes.length > 6) {
+                    historialMensajes = historialMensajes.slice(-6);
+                }
+            }
+            return mensajeDiv;
+        }
+
+        function formatearRespuesta(intencion, datos, libroBuscado = null) {
+            let texto = '';
+            let mostrarReservaBtn = false;
+            let mostrarSolicitudBtn = false;
+
+            switch (intencion) {
+                case 'ejemplares':
+                    if (!datos.resultados.length) {
+                        texto = `Quizás haya algo de "${libroBuscado}" en el catálogo. Usa el botón **Solicitud de Libros Nuevos** para proponer el libro si no lo tenemos. ¿Otro libro? 📖`;
+                        mostrarSolicitudBtn = true;
+                    } else {
+                        const libro = datos.resultados[0];
+                        texto = `Hay ${libro.copiasTotales} ejemplares totales de "${libro.titulo}", de los cuales ${libro.copiasDisponibles} están disponibles. Usa el botón **Reserva de Libros** para reservarlo. ¿Quieres abrir la ventana de búsqueda para ver más detalles? 📖`;
+                        mostrarReservaBtn = true;
+                    }
+                    break;
+                case 'recomendaciones':
+                case 'recomendacion_fantasia':
+                case 'recomendacion_poesia':
+                case 'recomendacion_narrativa':
+                case 'recomendacion_teatro':
+                case 'recomendacion_comic':
+                case 'recomendacion_literatura_inglesa':
+                case 'recomendacion_deportes':
+                    if (!datos.libros.length) {
+                        texto = `No encontré libros en esa categoría. Usa el botón **Solicitud de Libros Nuevos** para proponer uno. ¿Otro tipo de libro? 📖`;
+                        mostrarSolicitudBtn = true;
+                    } else {
+                        const libro = datos.libros[Math.floor(Math.random() * datos.libros.length)];
+                        const descripcion = datos.descripcion || 'una obra destacada, perfecta para explorar algo nuevo.';
+                        texto = `Te recomiendo *${libro.titulo}* de ${libro.autor} (${libro.categoria}). Es ${descripcion} Hay ${libro.copiasTotales} ejemplares totales, de los cuales ${libro.copiasDisponibles} están disponibles. Usa el botón **Reserva de Libros** para reservarlo. ¿Quieres abrir la ventana de búsqueda para ver más detalles? 📖`;
+                        mostrarReservaBtn = true;
+                        libroBuscado = libro.titulo;
+                    }
+                    break;
+                case 'reservas':
+                    texto = `Puedes reservar un libro usando el botón **Reserva de Libros**. ¿Quieres buscar un libro específico? 📖`;
+                    mostrarReservaBtn = true;
+                    break;
+                case 'solicitar':
+                    texto = `Puedes proponer un libro nuevo usando el botón **Solicitud de Libros Nuevos**. ¿Qué libro te gustaría sugerir? 📖`;
+                    mostrarSolicitudBtn = true;
+                    break;
+                default:
+                    texto = datos.texto || 'No pude conectar, inténtalo más tarde. ¿Otra consulta? 📖';
+                    mostrarReservaBtn = datos.texto?.includes('[RESERVA]');
+                    mostrarSolicitudBtn = datos.texto?.includes('[SOLICITUD]');
+            }
+
+            return { texto, mostrarReservaBtn, mostrarSolicitudBtn, libroBuscado };
+        }
+
+        function detectarIntencion(query) {
+            const lowerQuery = normalizarTexto(query);
+            if (lowerQuery.includes('cuantos') || lowerQuery.includes('ejemplares') || lowerQuery.includes('copias') || lowerQuery.includes('disponibles') || lowerQuery.includes('libros')) return 'ejemplares';
+            if (lowerQuery.includes('sinopsis')) return 'sinopsis';
+            if (lowerQuery.includes('resumen')) return 'resumen';
+            if (lowerQuery.includes('reseña') || lowerQuery.includes('critica') || lowerQuery.includes('opinion')) return 'reseña';
+            if (lowerQuery.includes('recomendaciones') || lowerQuery.includes('recomiendame') || lowerQuery.includes('recomiéndame') || lowerQuery.includes('sugerencias')) return 'recomendaciones';
+            if (lowerQuery.includes('fantasia') || lowerQuery.includes('aventura')) return 'recomendacion_fantasia';
+            if (lowerQuery.includes('poesia') || lowerQuery.includes('poema')) return 'recomendacion_poesia';
+            if (lowerQuery.includes('narrativa') || lowerQuery.includes('novela')) return 'recomendacion_narrativa';
+            if (lowerQuery.includes('teatro')) return 'recomendacion_teatro';
+            if (lowerQuery.includes('comic') || lowerQuery.includes('cómic')) return 'recomendacion_comic';
+            if (lowerQuery.includes('literatura inglesa') || lowerQuery.includes('libros en ingles') || lowerQuery.includes('libros en inglés')) return 'recomendacion_literatura_inglesa';
+            if (lowerQuery.includes('deportes')) return 'recomendacion_deportes';
+            if (lowerQuery.includes('reservar') || lowerQuery.includes('reserva')) return 'reservas';
+            if (lowerQuery.includes('solicitar') || lowerQuery.includes('proponer') || lowerQuery.includes('nuevo libro')) return 'solicitar';
+            return 'general';
+        }
+
+        async function consultarAPI(mensaje, intencion, contexto) {
+            const historialResumido = historialMensajes.length > 4 ?
+                `Resumen del historial: El usuario preguntó sobre ${historialMensajes.filter(m => m.role === 'user').map(m => m.content).join(', ')}.\n` :
+                historialMensajes.map(msg => `${msg.role === 'user' ? 'Usuario' : 'Hipat-IA'}: ${msg.content}`).join('\n');
+            const systemPrompt = `Eres Hipat-IA, una bibliotecaria virtual entusiasta del IES Carpe Diem. 
+Responde en español con un tono cálido, dinámico y profesional, como una amiga conocedora de libros. Usa el catálogo y el historial para respuestas relevantes. Nunca repitas "Hola, soy Hipat-IA".
+
+**Contexto del catálogo**:
+${contexto}
+
+**Historial**:
+${historialResumido}
+
+**Instrucciones**:
+- Responde en 400-700 palabras, terminando en una oración completa con punto.
+- Para sinopsis, resumen o reseña, usa el catálogo o conocimiento general.
+- Para reservas, menciona el botón **Reserva de Libros** y añade [RESERVA].
+- Para solicitudes de libros nuevos, menciona el botón **Solicitud de Libros Nuevos** y añade [SOLICITUD].
+- Usa emojis (📖, ✨) y termina con una pregunta breve como "¿Otro libro?".
+`;
+            const contents = [
+                { parts: [{ text: systemPrompt }], role: 'model' },
+                ...historialMensajes.map(msg => ({
+                    parts: [{ text: msg.content }],
+                    role: msg.role === 'user' ? 'user' : 'model'
+                })),
+                { parts: [{ text: mensaje }], role: 'user' }
+            ];
+            let respuesta = null;
+            if (!MODELO_FUNCIONAL || MODELO_FUNCIONAL === 'null') {
+                showToast('Buscando un modelo de Gemini funcional...', 'warning');
+                for (const modelo of MODELOS_A_PROBAR) {
+                    respuesta = await probarModelo(modelo, contents);
+                    if (respuesta) {
+                        showToast(`¡Modelo ${modelo} funciona! Usándolo de ahora en adelante.`, 'success');
+                        break;
+                    }
+                }
+                if (!respuesta) {
+                    respuesta = intencion === 'sinopsis' ? 'No pude conectar, inténtalo más tarde.' :
+                               intencion === 'resumen' ? 'No pude conectar, inténtalo más tarde.' :
+                               intencion === 'reseña' ? 'No pude conectar, inténtalo más tarde.' :
+                               'No pude conectar, inténtalo más tarde.';
+                }
+            } else {
+                respuesta = await probarModelo(MODELO_FUNCIONAL, contents);
+                if (!respuesta) {
+                    console.warn(`Modelo guardado ${MODELO_FUNCIONAL} falló, buscando nuevo modelo...`);
+                    localStorage.removeItem('gemini_modelo_funcional');
+                    MODELO_FUNCIONAL = null;
+                    return consultarAPI(mensaje, intencion, contexto);
+                }
+            }
+            return {
+                texto: respuesta,
+                mostrarReservaBtn: respuesta.includes('[RESERVA]'),
+                mostrarSolicitudBtn: respuesta.includes('[SOLICITUD]')
+            };
+        }
+
+        async function enviarMensaje() {
+            if (!catalogo) {
+                showToast('El catálogo aún está cargando. Intenta de nuevo en un momento.', 'warning');
+                return;
+            }
+            const mensaje = sanitizeInput(chatInput.value.trim());
+            if (!mensaje) {
+                showToast('Por favor, escribe un mensaje.', 'warning');
+                return;
+            }
+            agregarMensaje(mensaje, true);
+            chatInput.value = '';
+            const escribiendoDiv = agregarMensaje('Hipat-IA está buscando en la estantería... 📚', false, true);
+            const intencion = detectarIntencion(mensaje);
+            const cacheKey = `${intencion}_${normalizarTexto(mensaje)}`;
+            const mensajeId = mensajeActualId++;
+
+            if (cacheRespuestas[cacheKey]) {
+                escribiendoDiv.remove();
+                const partes = dividirTexto(cacheRespuestas[cacheKey], intencion);
+                respuestasPendientes[mensajeId] = partes;
+                agregarMensaje('', false, false, partes, mensajeId, 1, partes.length, null, cacheRespuestas[cacheKey].includes('[RESERVA]'), cacheRespuestas[cacheKey].includes('[SOLICITUD]'));
+                return;
+            }
+
+            let respuesta;
+            if (intencion === 'ejemplares') {
+                const libroBuscado = extraerLibroDeConsulta(mensaje);
+                if (!libroBuscado) {
+                    escribiendoDiv.remove();
+                    respuesta = { texto: 'No entendí el título del libro. ¿Puedes especificarlo, por ejemplo, "cuántos ejemplares hay de La Colmena"? 📖' };
+                } else {
+                    const resultados = buscarLibros(libroBuscado, true);
+                    respuesta = formatearRespuesta(intencion, { resultados }, libroBuscado);
+                }
+            } else if (['recomendaciones', 'recomendacion_fantasia', 'recomendacion_poesia', 'recomendacion_narrativa', 'recomendacion_teatro', 'recomendacion_comic', 'recomendacion_literatura_inglesa', 'recomendacion_deportes'].includes(intencion)) {
+                const librosFiltrados = intencion === 'recomendaciones' ? 
+                    catalogo : 
+                    catalogo.filter(libro => normalizarTexto(libro.categoria) === intencion.replace('recomendacion_', ''));
+                const descripciones = {
+                    recomendacion_fantasia: 'una emocionante obra de narrativa, ideal para amantes de la fantasía y la aventura.',
+                    recomendacion_poesia: 'un hermoso poemario que captura emociones profundas.',
+                    recomendacion_narrativa: 'una novela cautivadora que te sumergirá en una gran historia.',
+                    recomendacion_teatro: 'una obra teatral fascinante, llena de diálogos y emociones.',
+                    recomendacion_comic: 'un cómic vibrante con historias visuales emocionantes.',
+                    recomendacion_literatura_inglesa: 'una obra en inglés que destaca por su riqueza literaria.',
+                    recomendacion_deportes: 'un libro apasionante sobre deportes, perfecto para entusiastas.'
+                };
+                respuesta = formatearRespuesta(intencion, { libros: librosFiltrados, descripcion: descripciones[intencion] });
+            } else if (intencion === 'reservas' || intencion === 'solicitar') {
+                respuesta = formatearRespuesta(intencion, {});
+            } else {
+                const resultadosCatalogo = buscarLibros(mensaje);
+                const contexto = resultadosCatalogo.length > 0 ?
+                    `Resultados del catálogo:\n${resultadosCatalogo.map((libro, index) => `
+                        - **Título**: ${libro.titulo}  
+                          **Autor**: ${libro.autor}  
+                          **Categoría**: ${libro.categoria}  
+                          **Tejuelo**: ${libro.signatura}  
+                          **Ejemplares totales**: ${libro.copiasTotales}  
+                          **Disponibles**: ${libro.copiasDisponibles}
+                    `).join('\n')}\n\n` :
+                    'El catálogo no está disponible, pero puedo ofrecer sinopsis o recomendaciones generales. Usa el botón **Solicitud de Libros Nuevos** para proponer un libro.\n\n';
+                respuesta = await consultarAPI(mensaje, intencion, contexto);
+            }
+
+            escribiendoDiv.remove();
+            const partes = dividirTexto(respuesta.texto, intencion);
+            respuestasPendientes[mensajeId] = partes;
+            agregarMensaje('', false, false, partes, mensajeId, 1, partes.length, respuesta.libroBuscado, respuesta.mostrarReservaBtn, respuesta.mostrarSolicitudBtn);
+            cacheRespuestas[cacheKey] = respuesta.texto;
+            localStorage.setItem('hipatia_cache', JSON.stringify(cacheRespuestas));
+        }
+
+        async function initApp() {
+            const MIN_SPLASH_DURATION = 2000;
+            const startTime = Date.now();
+
+            loadTheme();
+            generarEstilosTejuelos();
+            try {
+                await cargarCatalogo();
+            } catch (error) {
+                console.error('Error en initApp:', error);
+                showToast('Error al cargar la aplicación.', 'error');
+            }
+
+            const elapsedTime = Date.now() - startTime;
+            const remainingTime = MIN_SPLASH_DURATION - elapsedTime;
+            if (remainingTime > 0) {
+                await new Promise(resolve => setTimeout(resolve, remainingTime));
+            }
+
+            const splash = document.getElementById('splash');
+            splash.classList.add('hidden');
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('seccionDerecha').style.display = 'block';
+            setTimeout(() => splash.remove(), 500);
+
+            agregarMensaje('Libros, autores, sinopsis, resúmenes... Mi magia es poderosa, pregunta. 📖');
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && document.getElementById('searchModal').style.display === 'block') {
+                    cerrarModal();
+                }
+            });
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
