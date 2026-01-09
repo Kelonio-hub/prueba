@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>🧅 Simulador Tor - Sesión Única</title>
+<style>
+  body {font-family:system-ui;background:#0d1117;color:#c9d1d9;margin:0;padding:20px;}
+  .container {max-width:900px;margin:auto;}
+  .header {text-align:center;margin-bottom:30px;}
+  .ip-box {background:#161b22;padding:15px;border-radius:12px;margin-bottom:25px;font-family:monospace;border:1px solid #30363d;}
+  .session {background:#161b22;padding:20px;margin:20px 0;border-radius:12px;border:1px solid #30363d;position:relative;}
+  .log {background:#0d1117;color:#00ff9d;padding:15px;height:220px;overflow-y:auto;font-family:'Consolas',monospace;font-size:13px;border-radius:10px;margin-top:25px;border:1px solid #30363d;}
+  .progress-bar {background:#21262d;height:10px;border-radius:5px;overflow:hidden;margin-top:12px;}
+  .progress {background:linear-gradient(90deg,#00ff9d,#58a6ff);height:100%;width:0%;transition:width 0.8s ease;}
+  .play-overlay {
+    position:absolute; inset:0; background:rgba(0,0,0,0.85);
+    display:flex; align-items:center; justify-content:center; font-size:2.8rem; cursor:pointer;
+    z-index:1000 !important; transition:opacity 0.4s; border-radius:8px; flex-direction:column; gap:8px;
+  }
+  .play-overlay:hover {background:rgba(0,0,0,0.7);}
+  .play-overlay.hidden {opacity:0; pointer-events:none;}
+  .overlay-text {font-size:1.1rem; color:#aaa;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h2>🧅 Simulador – Sesión única con sonido</h2>
+    <p>Pulsa **solo la primera vez** el botón para desbloquear sonido</p>
+  </div>
+
+  <div class="ip-box">
+    IP: <b><span id="ip">...</span></b> · Circuito: <span id="circuit">#1</span>
+  </div>
+
+  <div class="session">
+    <div><strong>Sesión única</strong></div>
+    <div>Vídeo: <span id="vid">cargando...</span></div>
+    <div>Tiempo: <span id="time">0</span>s / <span id="dur">?</span>s</div>
+    <div style="position:relative;">
+      <div id="player"></div>
+    </div>
+    <div class="progress-bar"><div class="progress" id="prog"></div></div>
+  </div>
+
+  <pre class="log" id="log"></pre>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+// === FUNCIÓN LOG (la más importante - debe estar arriba) ===
+const log = (msg) => {
+  const el = document.getElementById('log');
+  if (el) {
+    el.textContent += msg + '\n';
+    el.scrollTop = el.scrollHeight;
+  }
+  console.log(msg); // también sale en consola del navegador
+};
+
+// Lista completa de vídeos
+const VIDEOS = [
+  "PVAJ0PNkZOY","8GHDl5CaJak","PO8R79_khyY","dmis0r0zfgo","Y9Q33T1ZQCA",
+  "bxgEtnDPr8s","7gWzxC1FG9s","g0T9MUepaew","agG4IJkg9uk","BaB_n_6PB48",
+  "9W0aODZAQXI","IJBgGKUT8pk","nxtm5D2W5uY","KcECUBXV0dk","jr3mB0U_eAs",
+  "6U-Mc-nPitU","phFxVWs7nBg","TYymdrfkPt4","ZzZZzdRevWY","3bc0z8WZPnY",
+  "K98b_GEKIQI","B1lPa89JLnc","puOYhpBch6w","rSJGpBZtGfA","ihOaZigO3Dc",
+  "8Z0v_bcwWZ4","sm5q-wke_ZA","98gTZQCvxmA","HrOw0jVuczU","LgRAWhxUtIE",
+  "1lOzNqlHGiQ","Hr3MHaMypnI","t7pVbWWkJpo","bMnYoYa9flQ","4OlP0CLJdGY",
+  "ANKIGJCZDFg","EdRX5HB0-xs","ZnkHeuM5Pd0","L5TgRr5Zre4","7EuuLsNVuW0",
+  "d0dhk_sTm8g","1clOkDVWhoQ","MQ6GjU_vtuA","RgdWm2QNbsc","RJEdSmnJ2nc",
+  "k7SZs4wH0Gk","yzeXL5DC5No","V_zQJq7mF9A","x7aZN-KMaf4","zK_sM9L7Kl0",
+  "Hlav-1FYOF0","CPC93AwZsbg","YG-rWbuoTvg","eumgxZdighA","wXTFPhBj1qU",
+  "Zm9Uejl-3PE","lo3Nyzb5vpk","cmsAvvazgUk","aqeLygkAWg8","RIs5DifGYmc",
+  "KtYmcO91Zzk","6GROvOTf_B4","FkPQfdWwGls","34oQFo-rRjw","hLOX5KFWUe8",
+  "n6EP9rLCKD0","kEG_Z8p-FhQ","XODbdvhM6cw","8bv94f2lC_E","fqxY11qyr-E",
+  "rsvfGzOO1kY","4YJ-EB5i0x8","DQYGKD9zpxM","3kaKZRm0nAw","o7vLmTusGo4",
+  "GhKYWo8In6Y","jBmMYJbEwKM","HTojwb3kScY","KjQJyIqa-lE","EKVQyQ8PGfc",
+  "CqrJ3fdQaP8","Xe6qoIRUJao","oJ8rqr-qrtA","_ccxJLFLbKU","a5MPaBoNXcA",
+  "HWvqvpeHW0Y","EjZKftGw8RU","IaogHEIHAK8","3oa7W946xg8","14mJ61oHZdI",
+  "XwE9WRYJXK0","cXpDB15EICQ","j_9V3mls1PI","rXoBnjthPjo","6igPel7dh3k",
+  "dZqS63cvpsA","Wdwl-S3zWkg","LtvNS3uoP_8","NEcBp5BhuJE","a97sMylxr-8",
+  "nuq6URbX4Vk","F9593kcLHQE","bSiJeI_3Q_8","_bWT-Mv4n1k","eh4vGEfh3SM",
+  "x64mBqRQ7Ss","OA74PsM7tNI","SYF7XLVhuOc","spedB6-Xfg4","SwJl0UnLCSs",
+  "fuD5KKXFkmY"
+];
+
+const HIGH_RET = [0.95, 0.99];
+
+let player = null;
+let currentIdx = Math.floor(Math.random() * VIDEOS.length);
+let userHasInteracted = false;
+
+// IP check
+let curIP = "...", circuit = 1, lastIP = null;
+async function updateIP() {
+  try {
+    const r = await fetch("https://api.ipify.org?format=json");
+    const d = await r.json();
+    if (lastIP && lastIP !== d.ip) { circuit++; log(`Nuevo circuito → ${d.ip}`); }
+    lastIP = d.ip; curIP = d.ip;
+    document.getElementById('ip').textContent = curIP || 'detectando...';
+    document.getElementById('circuit').textContent = `#${circuit}`;
+  } catch {}
+}
+setInterval(updateIP, 20000); updateIP();
+
+// Crear botón overlay
+function createOverlay() {
+  log("[DEBUG] Creando overlay...");
+  const container = document.querySelector('.session > div[style*="position:relative"]');
+  if (!container) {
+    log("[ERROR] No se encontró contenedor del reproductor");
+    return;
+  }
+
+  // Eliminar viejo si existe
+  document.getElementById('overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'overlay';
+  overlay.className = 'play-overlay';
+  overlay.innerHTML = `
+    <div>▶ ${userHasInteracted ? 'Reanudar con sonido' : 'DESBLOQUEAR SONIDO (solo 1ª vez)'}</div>
+    <div class="overlay-text">Pulsa para permitir/reanudar audio</div>
+  `;
+  overlay.onclick = () => {
+    userHasInteracted = true;
+    overlay.innerHTML = "<div>Iniciando...</div>";
+    setTimeout(() => {
+      if (player) {
+        player.playVideo?.();
+        player.unMute?.();
+        player.setVolume?.(100);
+      }
+      overlay.remove();
+      log("Botón pulsado → intentando sonido");
+    }, 800);
+  };
+  container.appendChild(overlay);
+  log("[DEBUG] Overlay creado");
+}
+
+// Cargar vídeo
+function loadVideo() {
+  const vid = VIDEOS[currentIdx];
+  document.getElementById('vid').textContent = vid;
+
+  if (player) player.destroy?.();
+
+  player = new YT.Player('player', {
+    height: '360',
+    width: '640',
+    videoId: vid,
+    playerVars: {autoplay:0, mute:1, controls:1, rel:0, modestbranding:1, enablejsapi:1},
+    events: {
+      onReady: (e) => {
+        document.getElementById('dur').textContent = Math.floor(e.target.getDuration() || 180);
+        monitor();
+        if (userHasInteracted) {
+          e.target.unMute?.();
+          e.target.setVolume?.(100);
+          e.target.playVideo?.();
+          log("Auto-play con sonido");
+        } else {
+          log("Vídeo cargado muted → esperando botón");
+        }
+      },
+      onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED) nextVideo(); },
+      onError: (e) => log(`Error YouTube: ${e.data}`)
+    }
+  });
+}
+
+function nextVideo() {
+  currentIdx = Math.floor(Math.random() * VIDEOS.length);
+  log("Vídeo terminado → siguiente en 5-14s...");
+  setTimeout(loadVideo, Math.random() * 9000 + 5000);
+}
+
+function monitor() {
+  if (!player?.getCurrentTime) return setTimeout(monitor, 1500);
+
+  const cur = player.getCurrentTime() || 0;
+  const dur = player.getDuration() || 100;
+  document.getElementById('time').textContent = Math.floor(cur);
+  document.getElementById('prog').style.width = `${(cur / dur * 100) || 0}%`;
+
+  if (userHasInteracted && player.isMuted?.()) {
+    player.unMute?.();
+    player.setVolume?.(100);
+    log("[AUTO] Recuperando sonido...");
+  }
+
+  if (cur >= dur * (Math.random()*(HIGH_RET[1]-HIGH_RET[0]) + HIGH_RET[0]) || cur >= dur - 5) {
+    nextVideo();
+  } else {
+    setTimeout(monitor, 1400);
+  }
+}
+
+// Inicio
+function onYouTubeIframeAPIReady() {
+  log("[API] YouTube cargada correctamente ✓");
+  setTimeout(() => {
+    loadVideo();
+    createOverlay(); // Botón inicial
+  }, 3000); // Retraso para asegurar que el div #player esté en DOM
+}
+
+log("[INIT] Esperando YouTube API... (5-15 segundos aprox)");
+log("Cuando aparezca el botón negro grande → pulsa una vez para sonido");
+</script>
+</body>
+</html>
