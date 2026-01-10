@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>🧅 Simulador Tor</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: #0d1117;
+  }
+  .full-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .player-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 1280px;
+    height: 0;
+    padding-bottom: 56.25%;  /* 16:9 */
+    background: #161b22;
+  }
+  #player {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .progress-bar {
+    background: #21262d;
+    height: 10px;
+    width: 100%;
+    max-width: 1280px;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .progress {
+    background: linear-gradient(90deg, #00ff9d, #58a6ff);
+    height: 100%;
+    width: 0%;
+    transition: width 0.8s ease;
+  }
+</style>
+</head>
+<body>
+
+<div class="full-screen">
+  <div class="player-wrapper">
+    <div id="player"></div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress" id="prog"></div>
+  </div>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+const VIDEOS = [
+  "PVAJ0PNkZOY","8GHDl5CaJak","PO8R79_khyY","dmis0r0zfgo","Y9Q33T1ZQCA",
+  "bxgEtnDPr8s","7gWzxC1FG9s","g0T9MUepaew","BaB_n_6PB48","9W0aODZAQXI",
+  "IJBgGKUT8pk","ZzZZzdRevWY","K98b_GEKIQI","rSJGpBZtGfA","ihOaZigO3Dc",
+  "8Z0v_bcwWZ4","sm5q-wke_ZA","98gTZQCvxmA","1lOzNqlHGiQ","Hr3MHaMypnI",
+  "t7pVbWWkJpo","bMnYoYa9flQ","4OlP0CLJdGY","EdRX5HB0-xs","ZnkHeuM5Pd0",
+  "7EuuLsNVuW0","d0dhk_sTm8g","1clOkDVWhoQ","MQ6GjU_vtuA","RgdWm2QNbsc",
+  "V_zQJq7mF9A","zK_sM9L7Kl0","eumgxZdighA","Zm9Uejl-3PE","lo3Nyzb5vpk",
+  "aqeLygkAWg8","RIs5DifGYmc","KtYmcO91Zzk","34oQFo-rRjw","hLOX5KFWUe8",
+  "XODbdvhM6cw","8bv94f2lC_E","DQYGKD9zpxM","3kaKZRm0nAw","o7vLmTusGo4",
+  "GhKYWo8In6Y","HTojwb3kScY","EKVQyQ8PGfc","CqrJ3fdQaP8","Xe6qoIRUJao",
+  "oJ8rqr-qrtA","_ccxJLFLbKU","EjZKftGw8RU","3oa7W946xg8","14mJ61oHZdI",
+  "j_9V3mls1PI","rXoBnjthPjo","LtvNS3uoP_8","nuq6URbX4Vk","F9593kcLHQE",
+  "bSiJeI_3Q_8","_bWT-Mv4n1k","eh4vGEfh3SM","x64mBqRQ7Ss","OA74PsM7tNI",
+  "SYF7XLVhuOc","SwJl0UnLCSs","fuD5KKXFkmY"
+];
+
+let player = null;
+let currentIdx = Math.floor(Math.random() * VIDEOS.length);
+
+function loadVideo() {
+  const vid = VIDEOS[currentIdx];
+  if (player) player.destroy?.();
+
+  player = new YT.Player('player', {
+    height: '100%',
+    width: '100%',
+    videoId: vid,
+    playerVars: {
+      autoplay: 0,
+      mute: 0,  // Sonido desde inicio (AHK clic lo desbloquea)
+      controls: 1,
+      rel: 0,
+      modestbranding: 1,
+      enablejsapi: 1
+    },
+    events: {
+      onReady: (e) => {
+        e.target.setVolume(100);
+      },
+      onStateChange: (e) => {
+        if (e.data === YT.PlayerState.ENDED) nextVideo();
+      }
+    }
+  });
+}
+
+function nextVideo() {
+  currentIdx = Math.floor(Math.random() * VIDEOS.length);
+  setTimeout(loadVideo, Math.random() * 9000 + 5000);
+}
+
+function onYouTubeIframeAPIReady() {
+  loadVideo();
+}
+</script>
+</body>
+</html>
